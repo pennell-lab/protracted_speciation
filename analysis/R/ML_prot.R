@@ -50,7 +50,7 @@ set.seed(666)
 constant = sim.bd.age(age = 10, numbsim = 100, 
                       lambda = 1.5, mu = 1, 
                       complete = FALSE)
-
+constant = constant[sapply(constant, class) == "phylo"]
 
 
 
