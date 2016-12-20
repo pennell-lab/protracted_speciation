@@ -44,6 +44,7 @@ pbd_ML
 
 library(PBD)
 example("pbd_ML")
+# pbd_ML(1:10,initparsopt = c(0.2,0.01,0.3), exteq = 1)
 
 library(TreeSim)
 set.seed(666)
@@ -51,6 +52,48 @@ constant = sim.bd.age(age = 10, numbsim = 100,
                       lambda = 1.5, mu = 1, 
                       complete = FALSE)
 constant = constant[sapply(constant, class) == "phylo"]
+const.branch = lapply(constant, FUN = function(x) x$edge.length)
+
+init = c(2, 1, 1)
+const.estimates = lapply(const.branch, FUN = pbd_ML, initparsopt = init)
+const.df = do.call(rbind, const.estimates)
+library(geiger)
+const.df$ntip = sapply(constant, Ntip)
+library(reshape2)
+const2plot = melt(const.df, id.vars = c("loglik", "df", "conv", "ntip"))
+library(ggplot2)
+ggplot(const2plot, aes(ntip, value)) + geom_point() +
+  facet_grid(variable ~ ., scales = "free_y")
+
+
+
+
+set.seed(666)
+slowdown = sim.bd.age(age = 10, numbsim = 100, 
+                      lambda = 1.5, mu = 1,
+                      K = 300, # sp limit
+                      complete = FALSE)
+slowdown = slowdown[sapply(slowdown, class) == "phylo"]
+slow.branch = lapply(slowdown, FUN = function(x) x$edge.length)
+
+init = c(2, 1, 1)
+slow.estimates = lapply(slow.branch, FUN = pbd_ML, initparsopt = init)
+slow.df = do.call(rbind, slow.estimates)
+slow.df$ntip = sapply(slowdown, Ntip)
+slow2plot = melt(slow.df, id.vars = c("loglik", "df", "conv", "ntip"))
+ggplot(slow2plot, aes(ntip, value)) + geom_point() +
+  facet_grid(variable ~ ., scales = "free_y")
+
+
+
+
+
+both = rbind(const2plot, slow2plot)
+both$model = c(rep("constant", nrow(const2plot)), 
+               rep("slowdown", nrow(slow2plot)))
+ggplot(both, aes(ntip, value, colour = model)) + geom_point() +
+  facet_grid(variable ~ ., scales = "free_y")
+
 
 
 
