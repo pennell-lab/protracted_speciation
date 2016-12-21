@@ -27,9 +27,9 @@ pbd_Bayes = function(brts, # branching times
   if(length(initparsopt) == 3){
     initparsopt[4] = initparsopt[2]
   }
+  prior_logLik = make_prior_logLik(prior_b, prior_mu1, prior_la1, prior_mu2)
   logLik1 = pbd_loglik(pars1 = initparsopt, brts = brts)
-  prior1 = prior_b(initparsopt[1]) + prior_mu1(initparsopt[2]) + 
-    prior_la1(initparsopt[3]) + prior_mu2(initparsopt[4])
+  prior1 = prior_logLik(initparsopt)
   post1 = logLik1 + prior1
   out[1, 1:7] = c(logLik1, prior1, post1, initparsopt)
   
@@ -41,17 +41,14 @@ pbd_Bayes = function(brts, # branching times
     new.pars[par] = proposal
     
     new.logLik = pbd_loglik(pars1 = new.pars, brts = brts)
-    new.prior = prior_b(as.numeric(new.pars[1])) + 
-      prior_mu1(as.numeric(new.pars[2])) + 
-      prior_la1(as.numeric(new.pars[3])) + 
-      prior_mu2(as.numeric(new.pars[4]))
+    new.prior = prior_logLik(new.pars)
     new.post = new.logLik + new.prior
     
-    diff.logLik = out[i, "logLik"] - new.logLik
-    diff.prior = out[i, "prior"] - new.prior
-    diff = diff.logLik + diff.prior
+    ratio.logLik = new.logLik - out[i, "logLik"]
+    ratio.prior = new.prior - out[i, "prior"]
+    ratio = ratio.logLik + ratio.prior
     
-    accept = exp(diff) > runif(1)
+    accept = exp(ratio) > runif(1)
     out[i+1, "accepted"] = accept
     out[i+1, "proposed.par"] = par
     if(is.na(accept) | is.nan(accept)){
@@ -76,3 +73,24 @@ generate_proposal = function(step, var){
   new.var = runif(1, min = max(var - (step/2), 0), max = var + (step/2) )
   return(new.var)
 }
+
+make_prior_logLik = function(prior_b, prior_mu1, prior_la1, prior_mu2){
+  logLik = function(vector){
+    b = prior_b(as.numeric(vector[1]))
+    mu1 = prior_mu1(as.numeric(vector[2]))
+    la1 = prior_la1(as.numeric(vector[3]))
+    mu2 = prior_mu2(as.numeric(vector[4]))
+    
+    return(b + mu1 + la1 + mu2)
+  }
+  
+  return(logLik)
+}
+
+
+
+
+
+
+
+
