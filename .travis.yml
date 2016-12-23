@@ -5,6 +5,8 @@ env:
   - global:
     - WARNINGS_ARE_ERRORS=1
 
+sudo: required
+
 script: ./travis-tool.sh run_tests
 
 before_install:
@@ -16,4 +18,4 @@ install:
     - ./travis-tool.sh install_deps
 
 after_failure:
-  - ./travis-tool.sh dump_logs
+    - ./travis-tool.sh dump_logs
