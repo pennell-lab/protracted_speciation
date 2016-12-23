@@ -16,7 +16,7 @@ sudo: required
 
 latex: false
 
-script: run_tests
+script: make tests
 
 after_failure:
     - ./travis-tool.sh dump_logs
