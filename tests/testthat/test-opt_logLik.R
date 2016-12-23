@@ -4,6 +4,9 @@ library(testthat)
 
 context("opt_logLik")
 
+
+cat(getwd())
+
 library(geiger)
 data(amphibia)
 data(caniformia)
