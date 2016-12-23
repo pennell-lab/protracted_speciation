@@ -8,7 +8,7 @@ Maintainer: Mauro Sugawara <maurotcs@gmail.com>
 Description: Testing the capacity for protracted speciation models to explain slowdowns in diversification rates in real phylogenies using the methods implemented in the PBD R-package.
 License: GPL-2 | GPL-3
 Imports:
-    geiger
+    geiger,
     PBD,
     deSolve
 Suggests:
