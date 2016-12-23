@@ -1,6 +1,5 @@
 context("opt_logLik")
 
-library(geiger)
 data(amphibia)
 data(caniformia)
 data(carnivores)
