@@ -33,7 +33,7 @@ pars2 = data.frame(c(0, 1, 1, 2, 1, 1),
                    rep(0, 6),
                    stringsAsFactors = FALSE)
 
-source("analysis/R/opt_logLik.R")
+
 
 testthat("opt_logLik is identical to pbd_logLik",{
   for(i in 1:nrow(pars2)){
