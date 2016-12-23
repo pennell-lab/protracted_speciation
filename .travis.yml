@@ -1,5 +1,8 @@
 language: r
-cache: packages
+
+install:
+    - Rscript -e 'install.packages(c("devtools", "testthat", "geiger", "PBD", "deSolve"))'
+    - Rscript -e 'devtools::install_github("klmr/modules")'
 
 notifications:
   slack: bigbiodiversity:2ahk1Y54AixO4hIsX5QXTPnK
@@ -11,15 +14,9 @@ env:
 
 sudo: required
 
-script: ./travis-tool.sh run_tests
+latex: false
 
-before_install:
-    - curl -OL http://raw.github.com/craigcitro/r-travis/master/scripts/travis-tool.sh
-    - chmod 755 ./travis-tool.sh
-    - ./travis-tool.sh bootstrap
-
-install:
-    - ./travis-tool.sh install_deps
+script: run_tests
 
 after_failure:
     - ./travis-tool.sh dump_logs
