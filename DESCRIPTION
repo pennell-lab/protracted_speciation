@@ -1,0 +1,17 @@
+Package: protracted
+Type: Package
+Title: Protracted Speciation
+Version: 0.1
+Date: 2016-12-22
+Author: Mauro Sugawara
+Maintainer: Mauro Sugawara <maurotcs@gmail.com>
+Description: Testing the capacity for protracted speciation models to explain slowdowns in diversification rates in real phylogenies using the methods implemented in the PBD R-package.
+Imports:
+    ape
+    PBD
+    deSolve
+Suggests:
+    Treesim,
+    geiger,
+    parallel,
+    testthat
