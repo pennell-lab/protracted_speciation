@@ -12,6 +12,6 @@ Imports:
     PBD,
     deSolve
 Suggests:
-    Treesim,
+    TreeSim,
     parallel,
     testthat
