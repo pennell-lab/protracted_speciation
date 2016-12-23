@@ -39,9 +39,9 @@ prior_mu2 = function(mu1){
 curve(prior_mu2(x), -1, 100)
 
 
-rep = 3e+3
+rep = 5e+3
 initial = const.df[1, 1:4] + c(-0.7, +0.13, -90, +1.02)
-source("pbd_Bayes.R")
+source("analysis/R/pbd_Bayes.R")
 partiu = pbd_Bayes(brts = const.branch[[1]],
                    initparsopt = initial,
                    prior_b = prior_b, prior_mu1 = prior_mu1, 

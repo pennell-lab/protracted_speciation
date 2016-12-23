@@ -10,8 +10,21 @@ pbd_Bayes = function(brts, # branching times
                      prior_mu1, # logLik function for 'mu1' - ext good
                      prior_la1, # logLik function for 'la1' - sp completion
                      prior_mu2 = prior_mu1, # logLik function for 'mu2' - ext incipient
-                     rep = 1e+5, step = 1,
+                     step = 1, # step size for new proposed values; can be a function; can also be passed different values/functions for each variable (i.e., b, mu1, la1, mu2) 
+                     rep = 1e+5,
                      ...) {
+  
+  if(length(initparsopt) == 3){
+    initparsopt[4] = initparsopt[2]
+  }
+  
+  # making functions
+  generate_proposal = make_generate_proposal(step)
+  prior_logLik = make_prior_logLik(prior_b, prior_mu1, prior_la1, prior_mu2)
+  logLik_fun = opt_loglik(brts = branch, ...)
+  
+  
+  # initializing the output
   out = data.frame("logLik" = rep(999, rep+1),
                    "prior" = rep(999, rep+1),
                    "posterior" = rep(999, rep+1),
@@ -24,11 +37,7 @@ pbd_Bayes = function(brts, # branching times
                    "converged" = logical(rep+1),
                    stringsAsFactors = FALSE
   )
-  if(length(initparsopt) == 3){
-    initparsopt[4] = initparsopt[2]
-  }
-  prior_logLik = make_prior_logLik(prior_b, prior_mu1, prior_la1, prior_mu2)
-  logLik1 = pbd_loglik(pars1 = initparsopt, brts = brts)
+  logLik1 = logLik_fun(pars1 = initparsopt)
   prior1 = prior_logLik(initparsopt)
   post1 = logLik1 + prior1
   out[1, 1:7] = c(logLik1, prior1, post1, initparsopt)
@@ -37,10 +46,10 @@ pbd_Bayes = function(brts, # branching times
   new.pars = setNames(initparsopt, c("b", "mu1", "la1", "mu2"))
   for(i in 1:rep){
     par = sample(c("b", "mu1", "la1", "mu2"), size = 1)
-    proposal = generate_proposal(step = step, var = out[i, par])
+    proposal = generate_proposal(var = out[i, ], par = par)
     new.pars[par] = proposal
     
-    new.logLik = pbd_loglik(pars1 = new.pars, brts = brts)
+    new.logLik = logLik_fun(pars1 = new.pars)
     new.prior = prior_logLik(new.pars)
     new.post = new.logLik + new.prior
     
@@ -69,10 +78,44 @@ pbd_Bayes = function(brts, # branching times
   return(out)
 }
 
-generate_proposal = function(step, var){
-  new.var = runif(1, min = max(var - (step/2), 0), max = var + (step/2) )
-  return(new.var)
+make_generate_proposal = function(step){
+  if(is.numerical(step)){
+    if(length(step) == 1){
+      s = step/2
+      fun = function(var, par){
+        x = var[par]
+        new.var = runif(1, min = max(x - s, 0), max = x + s )
+        return(new.var)
+      }
+    } else{
+      names(step) = c("b", "mu1", "la1", "mu2")
+      fun = function(var, par){
+        x = var[par]
+        s = step[par]/2
+        new.var = runif(1, min = max(x - s, 0), max = x + s )
+        return(new.var)
+      }
+    }
+  } else{
+    if(length(step) == 1){
+      fun = function(var, par){
+        x = var[par]
+        new.var = step(x)
+        return(new.var)
+      } else{
+        names(step) = c("b", "mu1", "la1", "mu2")
+        fun = function(var, par){
+          x = var[par]
+          new.var = step[[par]](x)
+          return(new.var)
+        }
+      }
+    }
+  }
+  
+  return(fun)
 }
+
 
 make_prior_logLik = function(prior_b, prior_mu1, prior_la1, prior_mu2){
   logLik = function(vector){
@@ -90,7 +133,7 @@ make_prior_logLik = function(prior_b, prior_mu1, prior_la1, prior_mu2){
 
 
 
-
+source("opt_logLik.R")
 
 
 
