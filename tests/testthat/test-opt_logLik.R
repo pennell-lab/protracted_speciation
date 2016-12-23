@@ -4,9 +4,6 @@ library(testthat)
 
 context("opt_logLik")
 
-
-cat(getwd())
-
 library(geiger)
 data(amphibia)
 data(caniformia)
@@ -35,6 +32,7 @@ pars2 = data.frame(c(0, 1, 1, 2, 1, 1),
 
 
 
+library(PBD)
 testthat("opt_logLik is identical to pbd_logLik",{
   for(i in 1:nrow(pars2)){
     for(k in 1:length(branch)){
