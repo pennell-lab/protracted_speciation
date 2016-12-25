@@ -1,7 +1,4 @@
 
-
-library(testthat)
-
 context("opt_logLik")
 
 library(geiger)

@@ -5,44 +5,35 @@
 
 library(PBD)
 library(TreeSim)
-set.seed(666)
-constant = sim.bd.age(age = 10, numbsim = 100, 
-                      lambda = 1.5, mu = 1, 
-                      complete = FALSE)
-constant = constant[sapply(constant, class) == "phylo"]
-const.branch = lapply(constant, FUN = function(x) x$edge.length)
-init = c(2, 1, 1)
-const.estimates = lapply(const.branch, FUN = pbd_ML, initparsopt = init)
-const.df = do.call(rbind, const.estimates)
-head(const.df)
 
-
+load("analysis/data/pbd_sim.RData")
+sim.pars = apply(parameters, MARGIN = 2, mean)
 
 
 library(msm)
 prior_b = function(b){
-  dtnorm(b, mean = const.df[1, 1], sd = 15, log = TRUE, lower = 0)
+  dtnorm(b, mean = sim.pars[1], sd = 15, log = TRUE, lower = 0)
 }
 curve(prior_b(x), -1, 100)
 curve(exp(prior_b(x)), 0, 10)
 prior_mu1 = function(mu1){
-  dtnorm(mu1, mean = const.df[1, 2], sd = 15, log = TRUE, lower = 0)
+  dtnorm(mu1, mean = sim.pars[4], sd = 15, log = TRUE, lower = 0)
 }
 curve(prior_mu1(x), -1, 100)
 prior_la1 = function(la1){
-  dtnorm(la1, mean = const.df[1, 3], sd = 15, log = TRUE, lower = 0)
+  dtnorm(la1, mean = sim.pars[2], sd = 15, log = TRUE, lower = 0)
 }
 curve(prior_la1(x), -1, 100)
-prior_mu2 = function(mu1){
-  dtnorm(mu1, mean = const.df[1, 4], sd = 15, log = TRUE, lower = 0)
+prior_mu2 = function(mu2){
+  dtnorm(mu2, mean = sim.pars[5], sd = 15, log = TRUE, lower = 0)
 }
 curve(prior_mu2(x), -1, 100)
 
 
 rep = 5e+3
-initial = const.df[1, 1:4] + c(-0.7, +0.13, -90, +1.02)
+initial = sim.pars[c(1,4,2,5)]
 source("analysis/R/pbd_Bayes.R")
-partiu = pbd_Bayes(brts = const.branch[[1]],
+partiu = pbd_Bayes(brts = branches[[1]],
                    initparsopt = initial,
                    prior_b = prior_b, prior_mu1 = prior_mu1, 
                    prior_la1 = prior_la1, prior_mu2 = prior_mu2,

@@ -21,7 +21,7 @@ pbd_Bayes = function(brts, # branching times
   # making functions
   generate_proposal = make_generate_proposal(step)
   prior_logLik = make_prior_logLik(prior_b, prior_mu1, prior_la1, prior_mu2)
-  logLik_fun = opt_loglik(brts = branch, ...)
+  logLik_fun = opt_loglik(brts = brts, ...)
   
   
   # initializing the output
@@ -46,7 +46,7 @@ pbd_Bayes = function(brts, # branching times
   new.pars = setNames(initparsopt, c("b", "mu1", "la1", "mu2"))
   for(i in 1:rep){
     par = sample(c("b", "mu1", "la1", "mu2"), size = 1)
-    proposal = generate_proposal(var = out[i, ], par = par)
+    proposal = generate_proposal(var = new.pars, par = par)
     new.pars[par] = proposal
     
     new.logLik = logLik_fun(pars1 = new.pars)
@@ -63,14 +63,14 @@ pbd_Bayes = function(brts, # branching times
     if(is.na(accept) | is.nan(accept)){
       out[i+1, "converged"] = FALSE
       out[i+1, 1:7] = out[i, 1:7]
-      new.pars = out[i, 4:7]
+      new.pars = setNames(out[i, 4:7], c("b", "mu1", "la1", "mu2"))
     } else{
       out[i+1, "converged"] = TRUE
       if(accept){
         out[i+1, 1:7] = c(new.logLik, new.prior, new.post, new.pars)
       } else{
         out[i+1, 1:7] = out[i, 1:7]
-        new.pars = out[i, 4:7]
+        new.pars = setNames(out[i, 4:7], c("b", "mu1", "la1", "mu2"))
       }
     }
   }
@@ -79,38 +79,38 @@ pbd_Bayes = function(brts, # branching times
 }
 
 make_generate_proposal = function(step){
-  if(is.numerical(step)){
+  if(is.numeric(step)){
     if(length(step) == 1){
       s = step/2
       fun = function(var, par){
-        x = var[par]
+        x = as.numeric(var[par])
         new.var = runif(1, min = max(x - s, 0), max = x + s )
         return(new.var)
       }
     } else{
-      names(step) = c("b", "mu1", "la1", "mu2")
+      step2 = setNames(step/2, c("b", "mu1", "la1", "mu2"))
       fun = function(var, par){
-        x = var[par]
-        s = step[par]/2
+        x = as.numeric(var[par])
+        s = as.numeric(step2[par])
         new.var = runif(1, min = max(x - s, 0), max = x + s )
         return(new.var)
       }
     }
-  } else{
-    if(length(step) == 1){
-      fun = function(var, par){
-        x = var[par]
-        new.var = step(x)
-        return(new.var)
-      } else{
-        names(step) = c("b", "mu1", "la1", "mu2")
-        fun = function(var, par){
-          x = var[par]
-          new.var = step[[par]](x)
-          return(new.var)
-        }
-      }
+  } else if(class(step) == "function"){
+    fun = function(var, par){
+      x = as.numeric(var[par])
+      new.var = step(x)
+      return(new.var)
     }
+  } else if(class(step) == "list"){
+    names(step) = c("b", "mu1", "la1", "mu2")
+    fun = function(var, par){
+      x = as.numeric(var[par])
+      new.var = step[[par]](x)
+      return(new.var)
+    }
+  } else{
+    stop("'step' must be one of the three: a vector with the size of the step; a function; or a list of functions.")
   }
   
   return(fun)
@@ -133,7 +133,7 @@ make_prior_logLik = function(prior_b, prior_mu1, prior_la1, prior_mu2){
 
 
 
-source("opt_logLik.R")
+source("analysis/R/opt_logLik.R")
 
 
 
