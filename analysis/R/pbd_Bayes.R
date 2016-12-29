@@ -25,7 +25,7 @@ pbd_Bayes = function(brts, # branching times
   logLik_fun = opt_loglik(brts = brts, ...)
   
   
-  if(is.null = file){
+  if(is.null(file)){
     # initializing the output
     out = data.frame("logLik" = rep(999, rep+1),
                      "prior" = rep(999, rep+1),
@@ -114,7 +114,7 @@ pbd_Bayes = function(brts, # branching times
         converged = TRUE
         if(accept){
           cat(new.logLik, new.prior, new.post, new.pars,
-              accept, par, converged, 
+              accept, par, converged,
               file = output, sep = "\t")
           old.Lik = c(new.logLik, new.prior, new.post)
           old.pars = new.pars
