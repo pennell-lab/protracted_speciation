@@ -42,4 +42,5 @@ branches = lapply(phy, FUN = branching.times)
 
 
 
-save(branches, phy, sim, file = "~/Dropbox/PhD/gitHub/protracted_sp/analysis/data/pbd_sim.RData")
+save(branches, parameters, phy, sim, file = "~/Dropbox/PhD/gitHub/protracted_sp/analysis/data/pbd_sim.RData")
+

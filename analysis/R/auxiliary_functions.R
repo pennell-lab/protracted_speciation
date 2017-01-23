@@ -4,8 +4,8 @@
 
 
 
-start.output <- function(outputName, logLik, prior, posterior, parameters){
-  output <- file(paste(outputName, "_PBD_Bayes.txt", sep = ""), "w")
+start.output = function(outputName, logLik, prior, posterior, parameters){
+  output = file(paste(outputName, "_PBD_Bayes.txt", sep = ""), "w")
   
   b = parameters[1]
   mu1 = parameters[2]
@@ -25,18 +25,17 @@ start.output <- function(outputName, logLik, prior, posterior, parameters){
 make_generate_proposal = function(step){
   if(is.numeric(step)){
     if(length(step) == 1){
-      s = step/2
       fun = function(var, par){
         x = as.numeric(var[par])
-        new.var = runif(1, min = max(x - s, 0), max = x + s )
+        new.var = x + rnorm(1, mean = 0, sd = step)
         return(new.var)
       }
     } else{
-      step2 = setNames(step/2, c("b", "mu1", "la1", "mu2"))
+      step2 = setNames(step, c("b", "mu1", "la1", "mu2"))
       fun = function(var, par){
         x = as.numeric(var[par])
         s = as.numeric(step2[par])
-        new.var = runif(1, min = max(x - s, 0), max = x + s )
+        new.var = x + rnorm(1, mean = 0, sd = s)
         return(new.var)
       }
     }
@@ -54,7 +53,7 @@ make_generate_proposal = function(step){
       return(new.var)
     }
   } else{
-    stop("'step' must be one of the three: a vector with the size of the step; a function; or a list of functions.")
+    stop("'step' must be one of the three: a vector with the standard deviation of the step; a function; or a list of functions.")
   }
   
   return(fun)

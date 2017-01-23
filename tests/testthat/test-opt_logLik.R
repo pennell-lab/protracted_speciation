@@ -32,27 +32,20 @@ pars2 = data.frame(c(0, 1, 1, 2, 1, 1),
 library(PBD)
 testthat("opt_logLik is identical to pbd_logLik",{
   for(i in 1:nrow(pars2)){
-    for(k in 1:length(branch)){
+    for(k in 1:length(bran)){
       # MY function
-      my_function = opt_loglik(brts = branch[[k]], pars2 = pars2[i, ])
+      my_function = opt_loglik(brts = bran[[k]], pars2 = pars2[i, ])
       my = apply(input, MARGIN = 1, FUN = my_function)
       
       # PBD's function
       pbd = apply(input, MARGIN = 1, FUN = pbd_loglik,
-                  brts = branch[[k]],
+                  brts = bran[[k]],
                   pars2 = as.vector(pars2[i, ], mode = "character"))
       
       expect_that(my, is_identical_to(pbd))
     }
   }
 })
-
-
-
-
-
-
-
 
 
 

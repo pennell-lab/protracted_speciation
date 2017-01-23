@@ -10,7 +10,7 @@ pbd_Bayes = function(brts, # branching times
                      prior_mu1, # logLik function for 'mu1' - ext good
                      prior_la1, # logLik function for 'la1' - sp completion
                      prior_mu2 = prior_mu1, # logLik function for 'mu2' - ext incipient
-                     step = 1, # step size for new proposed values; can be a function; can also be passed different values/functions for each variable (i.e., b, mu1, la1, mu2) 
+                     step = 0.5, # standard deviation of the normal distribution used to generate new proposed values; can be a function; can also be passed different sd/functions for each variable (i.e., b, mu1, la1, mu2) 
                      rep = 1e+5,
                      file = NULL,
                      ...) {
@@ -92,6 +92,7 @@ pbd_Bayes = function(brts, # branching times
     old.pars = new.pars
     old.Lik = c(logLik1, prior1, post1)
     for(i in 1:rep){
+      cat(paste0(i, "\n"))
       par = sample(c("b", "mu1", "la1", "mu2"), size = 1)
       proposal = generate_proposal(var = new.pars, par = par)
       new.pars[par] = proposal
