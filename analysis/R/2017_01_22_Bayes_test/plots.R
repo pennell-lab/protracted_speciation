@@ -54,22 +54,23 @@ for(i in 1:6){
   fuck3 = read.csv(paste0("analysis/R/2017_01_22_Bayes_test/Bayes_test/Bayes_test_phy", i, ".3_PBD_Bayes.txt"), sep = "\t")
   acc3 = round(sum(fuck3$accepted, na.rm = 1)/nrow(fuck3), 3)
   
-  fuck.all = list(fuck1[, 1:7], fuck2[, 1:7], fuck3[, 1:7])
-  #fuck.all = mcmc(fuck1[, 1:7], start = 3000, thin = 100)
-  res = data.frame(fuck.all, "steps" = 1:nrow(fuck.all[[1]]))
-  res = melt(res, id = "steps")
-  head(res)
   
   
   fucks = list(fuck1[, 4:7], fuck2[, 4:7], fuck3[, 4:7])
   coda.fuck0 = lapply(X = fucks, FUN = mcmc, start = 3000, thin = 100)
   coda.fuck = mcmc.list(coda.fuck0)
   
-  # plot(coda.fuck0[[1]])
-  # parameters[1, ]
-  # 
-  # pairs(fuck1[, 4:7])
-  # betterPairs(fuck[, 4:7])
+  
+  
+  fuck.all = rbind(fuck1[, 1:7], fuck2[, 1:7], fuck3[, 1:7])
+  #fuck.all = mcmc(fuck1[, 1:7], start = 3000, thin = 100)
+  r = data.frame(fuck.all, "sim" = rep(1:length(fucks), each = nrow(fuck1)))
+  r = melt(r, id = "sim")
+  r$sim = as.factor(r$sim)
+  r$steps = rep(1:nrow(fuck1), length(fucks))
+  head(r)
+  
+  
   
   par.ind = ceiling(i/2)
   pdf(file = paste0("analysis/output/Bayes_test_phy_", i, ".pdf"))
@@ -97,10 +98,6 @@ for(i in 1:6){
                              acc1, acc2, acc3, sep = "   "),
        pos = 4)
   
-  # trace plots for each chain separately
-  ggplot(res, aes(steps, value)) + geom_line() +
-    facet_grid(variable ~ ., scales = "free_y")
-  
   # correlation between variables
   par(mfrow=c(1,1))
   betterPairs(fucks[[1]])
@@ -118,6 +115,14 @@ for(i in 1:6){
   
   
   dev.off()
+  
+  
+  
+  # trace plots for each chain separately
+  par(mfrow=c(1,1))
+  ggplot(r, aes(steps, value, colour = sim)) + geom_line(linetype = 2) +
+    facet_grid(variable ~ ., scales = "free_y")
+  ggsave(file = paste0("analysis/output/Bayes_test_trace_plots_phy_", i, ".pdf"))
 }
 
 
