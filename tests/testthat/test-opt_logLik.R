@@ -5,13 +5,13 @@ library(geiger)
 data(amphibia)
 data(caniformia)
 data(carnivores)
-data(caudata)
-data(chelonia)
-data(geospiza)
-data(whales)
+# data(caudata)
+# data(chelonia)
+# data(geospiza)
+# data(whales)
 
-phy = list(amphibia[[3]], caniformia[[1]], carnivores[[1]],
-           caudata[[1]], chelonia[[1]], geospiza[[1]], whales[[1]])
+phy = list(amphibia[[3]], caniformia[[1]], carnivores[[1]])
+           #caudata[[1]], chelonia[[1]], geospiza[[1]], whales[[1]])
 bran = lapply(phy, branching.times)
 bran[[8]] = 1:10
 input = matrix(data = c(0.2,0.1,1,0.1,
