@@ -13,6 +13,7 @@ set.seed(666)
 (mm = opt_pbd_sim_cpp(pars = c(0.3, 2, 0, 0.1, 0.1), age = 5))
 (tt = opt_pbd_sim_cpp(pars = c(0.3, 2, 0, 0.1, 0.1), taxa = 10))
 plot(tt[[1]])
+(mm = opt_pbd_sim(pars = c(0.3, 2, 0, 0.1, 0.1), age = 5, soc = 2))
 set.seed(660)
 pbd_sim(pars = c(0.3, 2, 0, 0.1, 0.1), age = 3, soc = 1, plotit = FALSE)
 
@@ -36,6 +37,15 @@ sum(sapply(lapply(pbd, '[[', 1), is.null))/100
 sourceCpp("analysis/R/opt_pbd_sim.cpp")
 sourceCpp("analysis/R/opt_pbd_sim_taxa.cpp")
 opt_pbd_sim_cpp = function (pars, age = NULL, taxa = NULL) # soc = 2, ntry = 1) 
+
+compare <- microbenchmark(opt_pbd_sim(pars = c(0.3, 2, 0, 0.1, 0.1), age = 5, soc = 1),
+                          pbd_sim(pars = c(0.3, 2, 0, 0.1, 0.1), age = 3, soc = 1, plotit = FALSE),
+                          times = 1000)
+
+
+
+
+opt_pbd_sim = function (pars, age, soc = 2, ntry = 1) 
   # ntry - controls the number of times the simulation will try to generate a valid phylogeny
 {
   # la1 = pars[1]
