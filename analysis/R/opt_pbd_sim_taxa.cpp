@@ -75,87 +75,123 @@ int get_id(NumericVector vec){
 
 
 // [[Rcpp::export]]
-Rcpp::NumericMatrix pbdLoop_taxa(Rcpp::NumericVector pars, int taxa){
-  double t = 0;
+Rcpp::NumericMatrix pbdLoop_taxa(Rcpp::NumericVector pars, int taxa, double ntry){
   
-  int id1 = 0;
-  int id = id1 + 1;
-  //int Sid1 = 0;
-  int Sid = 1;
-  Rcpp::NumericVector sg = NumericVector::create(NA_REAL, id);
-  Rcpp::NumericVector si = NumericVector::create(NA_REAL);
+  
+  double t, denom;
+  int id1, id, Sid; //int Sid1 = 0;
+  int event, Ng, Ni;
+  Rcpp::NumericVector sg, si, vec, probs;
   Rcpp::NumericMatrix L(1, 6);
-  L(0, 0) = id;
-  L(0, 1) = 0;
-  L(0, 2) = -1 * exp(-10);
-  L(0, 3) = 0;
-  L(0, 4) = -1;
-  L(0, 5) = 1;
   
-  
-  int Ng = sg.size() - 1;
-  int Ni = si.size() - 1;
-  Rcpp::NumericVector probs = estimateProbs(pars, Ng, Ni);
-  double denom = sum(probs);
-  probs = probs / denom;
-  t = t - log(Rcpp::runif(1)[0]) / denom;
-  
-  
-  int parent, iddie, todie, idcomplete, tocomplete, event;
+  int parent, iddie, todie, idcomplete, tocomplete;
   Rcpp::NumericVector indices = NumericVector::create(1, 2, 3, 4, 5);
-  Rcpp::NumericVector vec;
-  event = Rcpp::RcppArmadillo::sample(indices, 1, FALSE, probs)[0];
-  while(1) {
-    if (event == 1) {
-      parent = get_which(sg);
-      id += 1;
-      vec = NumericVector::create(id, parent, t, -1, -1, L(abs(parent) - id1 - 1, 5));
-      L = addRow(L, vec);
-      si.insert(si.end(), -id);
-      Ni += 1;
-    } else if (event == 2) {
-      iddie = get_id(sg);
-      todie = sg(iddie);
-      L(todie - id1 - 1, 4) = t;
-      sg.erase(sg.begin() + iddie);
-      Ng -= 1;
-    } else if (event == 3) {
-      if(Ng == taxa){
-        break;
-      }
-      idcomplete = get_id(si);
-      tocomplete = abs(si(idcomplete));
-      L(tocomplete - id1 - 1, 3) = t;
-      Sid += 1;
-      L(tocomplete - id1 - 1, 5) = Sid;
-      sg.insert(sg.end(), tocomplete);
-      si.erase(si.begin() + idcomplete);
-      Ng += 1;
-      Ni -= 1;
-    } else if (event == 4) {
-      parent = get_which(si);
-      id += 1;
-      vec = NumericVector::create(id, parent, t, -1, -1, L(abs(parent) - id1 - 1, 5));
-      L = addRow(L, vec);
-      si.insert(si.end(), -id);
-      Ni += 1;
-    } else {
-      iddie = get_id(si);
-      todie = abs(si[iddie]);
-      L(todie - id1 - 1, 4) = t;
-      si.erase(si.begin() + iddie);
-      Ni -= 1;
-    }
-    
+  bool bb = TRUE;
+  
+  while(1){
+    id1 = 0;
+    id = id1 + 1;
+    Sid = 1;
+    sg = NumericVector::create(NA_REAL, id);
+    si = NumericVector::create(NA_REAL);
+    Ng = sg.size() - 1;
+    Ni = si.size() - 1;
+    L(0, 0) = id;
+    L(0, 1) = 0;
+    L(0, 2) = -1 * exp(-10);
+    L(0, 3) = 0;
+    L(0, 4) = -1;
+    L(0, 5) = 1;
     probs = estimateProbs(pars, Ng, Ni);
     denom = sum(probs);
     probs = probs / denom;
-    t = t - log(Rcpp::runif(1)[0]) / denom;
-    event = Rcpp::RcppArmadillo::sample(indices, 1, FALSE, probs)[0];
+    t = 0;
+    
+    
+    
+    while(bb) {
+      probs = estimateProbs(pars, Ng, Ni);
+      denom = sum(probs);
+      probs = probs / denom;
+      t = t - log(Rcpp::runif(1)[0]) / denom;
+      event = Rcpp::RcppArmadillo::sample(indices, 1, FALSE, probs)[0];
+      
+      switch(event){
+      case (1): { 
+        parent = get_which(sg);
+        id += 1;
+        vec = NumericVector::create(id, parent, t, -1, -1, L(abs(parent) - id1 - 1, 5));
+        L = addRow(L, vec);
+        si.insert(si.end(), -id);
+        Ni += 1;
+        break;
+      } 
+      case (2): {
+        iddie = get_id(sg);
+        todie = sg(iddie);
+        L(todie - id1 - 1, 4) = t;
+        sg.erase(sg.begin() + iddie);
+        Ng -= 1;
+        break;
+      } 
+      case (3): {
+        if(Ng == taxa){
+          bb = FALSE;
+          break;
+        }
+        idcomplete = get_id(si);
+        tocomplete = abs(si(idcomplete));
+        L(tocomplete - id1 - 1, 3) = t;
+        Sid += 1;
+        L(tocomplete - id1 - 1, 5) = Sid;
+        sg.insert(sg.end(), tocomplete);
+        si.erase(si.begin() + idcomplete);
+        Ng += 1;
+        Ni -= 1;
+        break;
+      } 
+      case (4): {
+        parent = get_which(si);
+        id += 1;
+        vec = NumericVector::create(id, parent, t, -1, -1, L(abs(parent) - id1 - 1, 5));
+        L = addRow(L, vec);
+        si.insert(si.end(), -id);
+        Ni += 1;
+        break;
+      }
+      case (5): {
+        iddie = get_id(si);
+        todie = abs(si[iddie]);
+        L(todie - id1 - 1, 4) = t;
+        si.erase(si.begin() + iddie);
+        Ni -= 1;
+        break;
+      }
+      }
+      
+      if((Ng + Ni) == 0){
+        bb = FALSE; // if all sp die
+      }
+    }
+    
+    
+    if(Ng == taxa){
+      break;
+    } else{
+      ntry -= 1;
+      if(ntry == 0){
+        break;
+      }
+      bb = TRUE;
+    }
   }
+  
   
   L(0, 3) = t;
   
   return L;
 }
+
+
+
 

@@ -1,45 +1,20 @@
-library(ape)
-library(PBD)
-source("analysis/R/opt_pbd_sim.R")
-
-library(Rcpp)
-library('inline')
 
 
-pars = c(0.3, 2, 0, 0.1, 0.1)
-age = 10
-soc = 2
-set.seed(666)
-(mm = opt_pbd_sim_cpp(pars = c(0.3, 2, 0, 0.1, 0.1), age = 5))
-(tt = opt_pbd_sim_cpp(pars = c(0.3, 2, 0, 0.1, 0.1), taxa = 10))
-plot(tt[[1]])
-(mm = opt_pbd_sim(pars = c(0.3, 2, 0, 0.1, 0.1), age = 5, soc = 2))
-set.seed(660)
-pbd_sim(pars = c(0.3, 2, 0, 0.1, 0.1), age = 3, soc = 1, plotit = FALSE)
-
-library(microbenchmark)
-compare <- microbenchmark(opt_pbd_sim_cpp(pars = c(0.3, 2, 0, 0.1, 0.1), age = 5),
-                          pbd_sim(pars = c(0.3, 2, 0, 0.1, 0.1), age = 5, soc = 1, plotit = FALSE),
-                          times = 100)
-cpp = list()
-pbd = list()
-pp = c(0.3, 2, 0, 0.1, 0.1)
-for(i in 1:100){
-  cpp[[i]] = opt_pbd_sim_cpp(pars = pp, age = 5)
-  pbd[[i]] = pbd_sim(pars = pp, age = 5, soc = 1, plotit = FALSE)
-}
-length(cpp)
-length(pbd)
-sum(sapply(lapply(cpp, '[[', 1), is.null))/100
-sum(sapply(lapply(pbd, '[[', 1), is.null))/100
 
 
-sourceCpp("analysis/R/opt_pbd_sim.cpp")
-sourceCpp("analysis/R/opt_pbd_sim_taxa.cpp")
 
-opt_pbd_sim_cpp = function (pars, age, soc = 2, ntry = 1) 
+opt_pbd_sim_cpp = function (pars, age = NULL, taxa = NULL, ntry = 1) # soc = 2, ntry = 1) 
   # ntry - controls the number of times the simulation will try to generate a valid phylogeny
 {
+  library(ape)
+  library(PBD)
+  
+  library(Rcpp)
+  library(RcppArmadillo)
+  sourceCpp("opt_pbd_sim.cpp")
+  sourceCpp("opt_pbd_sim_taxa.cpp")
+  
+  
   # la1 = pars[1]
   # la2 = pars[2]
   # la3 = pars[3]
@@ -49,9 +24,10 @@ opt_pbd_sim_cpp = function (pars, age, soc = 2, ntry = 1)
   pars = pars[c(1, 4, 2, 3, 5)]
   
   if(!is.null(age)){
-    L = pbdLoop(pars, age)
+    L = pbdLoop(pars, age, ntry)
+    taxa = 0
   } else if(!is.null(taxa)){
-    L = L = pbdLoop_taxa(pars, taxa)
+    L = pbdLoop_taxa(pars, taxa, ntry)
     age = L[1, 4]
     L[1, 4] = 0
   } else{
@@ -69,12 +45,52 @@ opt_pbd_sim_cpp = function (pars, age, soc = 2, ntry = 1)
   if(is.null(rtree) | class(rtree) == "try-error"){
     return(NULL)
   }
-  tree = as.phylo(rtree)
+  tree = ape::as.phylo(rtree)
+  
+  # sL_random = PBD::sampletree(absL, age, samplemethod = "random")
+  # stree_random = ape::as.phylo(ape::read.tree(text = PBD::detphy(sL_random, age)))
+  # sL_oldest = PBD::sampletree(absL, age, samplemethod = "oldest")
+  # stree_oldest = ape::as.phylo(ape::read.tree(text = PBD::detphy(sL_oldest, age)))
+  # sL_youngest = PBD::sampletree(absL, age, samplemethod = "youngest")
+  # stree_youngest = ape::as.phylo(ape::read.tree(text = PBD::detphy(sL_youngest, age)))
+  # sL_random[, 3:5][which(sL_random[, 3:5] == -1)] = age + 1
+  # sL_random[, 3:5] = age - sL_random[, 3:5]
+  # sL_random = sL_random[order(sL_random[, 1]), ]
+  # sL_oldest[, 3:5][which(sL_oldest[, 3:5] == -1)] = age + 1
+  # sL_oldest[, 3:5] = age - sL_oldest[, 3:5]
+  # sL_oldest = sL_oldest[order(sL_oldest[, 1]), ]
+  # sL_youngest[, 3:5][which(sL_youngest[, 3:5] == -1)] = age + 1
+  # sL_youngest[, 3:5] = age - sL_youngest[, 3:5]
+  # sL_youngest = sL_youngest[order(sL_youngest[, 1]), ]
+  # reconL = PBD::pbd_reconstruct(L0)
+  # recontree = ape::as.phylo(ape::read.tree(text = PBD::detphy(reconL, age)))
   L[, 3:5][which(L[, 3:5] == -1)] = age + 1
   L[, 3:5] = age - L[, 3:5]
   L = L[order(L[, 1]), ]
-  Ltreeslist = list(tree = tree, 
+  
+  # reconL[, 3:5][which(reconL[, 3:5] == -1)] = age + 1
+  # reconL[, 3:5] = age - reconL[, 3:5]
+  # reconL = reconL[order(reconL[, 1]), ]
+
+  Ltreeslist = list(tree = tree,
+                    # stree_random = stree_random, 
+                    # stree_oldest = stree_oldest,
+                    # stree_youngest = stree_youngest, 
+                    # recontree = recontree, 
+                    # reconL = reconL,
+                    # sL_random = sL_random,
+                    # sL_oldest = sL_oldest, 
+                    # sL_youngest = sL_youngest,
                     L = L,
                     L0 = L0)
   return(Ltreeslist)
 }
+
+
+
+
+
+
+
+
+
