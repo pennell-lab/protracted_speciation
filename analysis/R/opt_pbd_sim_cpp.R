@@ -6,11 +6,11 @@
 opt_pbd_sim_cpp = function (pars, age = NULL, taxa = NULL, ntry = 1) # soc = 2, ntry = 1) 
   # ntry - controls the number of times the simulation will try to generate a valid phylogeny
 {
-  library(ape)
-  library(PBD)
+  require(ape)
+  require(PBD)
   
-  library(Rcpp)
-  library(RcppArmadillo)
+  require(Rcpp)
+  require(RcppArmadillo)
   sourceCpp("opt_pbd_sim.cpp")
   sourceCpp("opt_pbd_sim_taxa.cpp")
   
@@ -37,15 +37,16 @@ opt_pbd_sim_cpp = function (pars, age = NULL, taxa = NULL, ntry = 1) # soc = 2, 
   L0 = L
   absL = L
   absL[, 2] = abs(L[, 2])
-  ttree = try(PBD::detphy(absL, age), silent = TRUE)
-  if(class(ttree) == "try-error"){
-    return(NULL)
-  }
-  rtree = try(ape::read.tree(text = ttree))
-  if(is.null(rtree) | class(rtree) == "try-error"){
-    return(NULL)
-  }
-  tree = ape::as.phylo(rtree)
+  absL[1, 2] = 0
+  # ttree = try(PBD::detphy(absL, age), silent = TRUE)
+  # if(class(ttree) == "try-error"){
+  #   return(NULL)
+  # }
+  # rtree = try(ape::read.tree(text = ttree))
+  # if(is.null(rtree) | class(rtree) == "try-error"){
+  #   return(NULL)
+  # }
+  # tree = ape::as.phylo(rtree)
   
   # sL_random = PBD::sampletree(absL, age, samplemethod = "random")
   # stree_random = ape::as.phylo(ape::read.tree(text = PBD::detphy(sL_random, age)))
@@ -72,7 +73,7 @@ opt_pbd_sim_cpp = function (pars, age = NULL, taxa = NULL, ntry = 1) # soc = 2, 
   # reconL[, 3:5] = age - reconL[, 3:5]
   # reconL = reconL[order(reconL[, 1]), ]
 
-  Ltreeslist = list(tree = tree,
+  Ltreeslist = list(# tree = tree,
                     # stree_random = stree_random, 
                     # stree_oldest = stree_oldest,
                     # stree_youngest = stree_youngest, 

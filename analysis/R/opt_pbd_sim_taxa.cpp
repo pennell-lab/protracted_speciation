@@ -180,6 +180,7 @@ Rcpp::NumericMatrix pbdLoop_taxa(Rcpp::NumericVector pars, int taxa, double ntry
     } else{
       ntry -= 1;
       if(ntry == 0){
+        L(0, 2) = NA_REAL;
         break;
       }
       bb = TRUE;
