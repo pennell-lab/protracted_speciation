@@ -10,7 +10,9 @@ License: GPL-2 | GPL-3
 Imports:
     geiger,
     PBD,
-    deSolve
+    deSolve,
+    Rcpp,
+    RcppArmadillo
 Suggests:
     TreeSim,
     parallel,
