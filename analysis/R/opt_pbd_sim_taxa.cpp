@@ -79,23 +79,23 @@ Rcpp::NumericMatrix pbdLoop_taxa(Rcpp::NumericVector pars, int taxa, double ntry
   
   
   double t, denom;
-  int id1, id, Sid; //int Sid1 = 0;
+  int id, Sid; //int Sid1 = 0;
   int event, Ng, Ni;
   Rcpp::NumericVector sg, si, vec, probs;
-  Rcpp::NumericMatrix L(1, 6);
   
   int parent, iddie, todie, idcomplete, tocomplete;
   Rcpp::NumericVector indices = NumericVector::create(1, 2, 3, 4, 5);
+  Rcpp::NumericMatrix L(1, 6);
   bool bb = TRUE;
   
-  while(1){
-    id1 = 0;
-    id = id1 + 1;
+  while(ntry > 0){
+    id = 1;
     Sid = 1;
     sg = NumericVector::create(NA_REAL, id);
     si = NumericVector::create(NA_REAL);
     Ng = sg.size() - 1;
     Ni = si.size() - 1;
+    Rcpp::NumericMatrix L(1, 6);
     L(0, 0) = id;
     L(0, 1) = 0;
     L(0, 2) = -1 * exp(-10);
@@ -120,7 +120,7 @@ Rcpp::NumericMatrix pbdLoop_taxa(Rcpp::NumericVector pars, int taxa, double ntry
       case (1): { 
         parent = get_which(sg);
         id += 1;
-        vec = NumericVector::create(id, parent, t, -1, -1, L(abs(parent) - id1 - 1, 5));
+        vec = NumericVector::create(id, parent, t, -1, -1, L(abs(parent) - 1, 5));
         L = addRow(L, vec);
         si.insert(si.end(), -id);
         Ni += 1;
@@ -129,21 +129,21 @@ Rcpp::NumericMatrix pbdLoop_taxa(Rcpp::NumericVector pars, int taxa, double ntry
       case (2): {
         iddie = get_id(sg);
         todie = sg(iddie);
-        L(todie - id1 - 1, 4) = t;
+        L(todie - 1, 4) = t;
         sg.erase(sg.begin() + iddie);
         Ng -= 1;
         break;
       } 
       case (3): {
         if(Ng == taxa){
-          bb = FALSE;
-          break;
-        }
+        bb = FALSE;
+        break;
+      }
         idcomplete = get_id(si);
         tocomplete = abs(si(idcomplete));
-        L(tocomplete - id1 - 1, 3) = t;
+        L(tocomplete - 1, 3) = t;
         Sid += 1;
-        L(tocomplete - id1 - 1, 5) = Sid;
+        L(tocomplete - 1, 5) = Sid;
         sg.insert(sg.end(), tocomplete);
         si.erase(si.begin() + idcomplete);
         Ng += 1;
@@ -153,7 +153,7 @@ Rcpp::NumericMatrix pbdLoop_taxa(Rcpp::NumericVector pars, int taxa, double ntry
       case (4): {
         parent = get_which(si);
         id += 1;
-        vec = NumericVector::create(id, parent, t, -1, -1, L(abs(parent) - id1 - 1, 5));
+        vec = NumericVector::create(id, parent, t, -1, -1, L(abs(parent) - 1, 5));
         L = addRow(L, vec);
         si.insert(si.end(), -id);
         Ni += 1;
@@ -162,7 +162,7 @@ Rcpp::NumericMatrix pbdLoop_taxa(Rcpp::NumericVector pars, int taxa, double ntry
       case (5): {
         iddie = get_id(si);
         todie = abs(si[iddie]);
-        L(todie - id1 - 1, 4) = t;
+        L(todie - 1, 4) = t;
         si.erase(si.begin() + iddie);
         Ni -= 1;
         break;
@@ -174,21 +174,15 @@ Rcpp::NumericMatrix pbdLoop_taxa(Rcpp::NumericVector pars, int taxa, double ntry
       }
     }
     
+    ntry -= 1;
+    bb = TRUE; 
     
     if(Ng == taxa){
-      break;
-    } else{
-      ntry -= 1;
-      if(ntry == 0){
-        L(0, 2) = NA_REAL;
-        break;
-      }
-      bb = TRUE;
-    }
+      L(0, 3) = t;
+      return L;
+    } 
+    
   }
-  
-  
-  L(0, 3) = t;
   
   return L;
 }

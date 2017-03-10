@@ -23,6 +23,7 @@
 # all.equal(aaa$edge.length, aux$stree_oldest$edge.length)
 # cophyloplot(aaa, aux$stree_oldest)
 
+# test = list(L, age)
 
 library(PBD)
 
@@ -66,6 +67,7 @@ clean_phylo = function(ttree, ns, taxa){
   return(ttree)
 }
 
+#edge=ppp$edge; mat=ppp$mat; tips=Nsp
 build_edge.length = function(edge, mat, tips){
   out = c()
   edge = edge[-1, ]
@@ -73,7 +75,7 @@ build_edge.length = function(edge, mat, tips){
     leaf = edge[w, 2]
     stem = edge[w, 1]
     if(leaf <= tips){
-      out[w] = mat[which(mat[ , 7] == stem), 3]
+      out[w] = mat[which(mat[ , 7] == stem), 3] - mat[which(mat[ , 6] == leaf), 5]
     } else{
       out[w] = mat[which(mat[ , 7] == leaf), 4]
     }
@@ -120,7 +122,7 @@ build_edge = function(filog, family, nn, id){
 get_good = function(mat, taxa){
   incip = lapply(taxa, FUN = function(s) mat[which(mat[ , 6] == s), ])
   orig = sapply(incip, function(x) ifelse(class(x) == "numeric", x[3], max(x[ , 3])))
-  ext = sapply(incip, function(x) ifelse(class(x) == "numeric", x[5], min(x[ , 5])))
+  ext = sapply(incip, function(x) ifelse(class(x) == "numeric", x[5], x[ , 5]))
   ext[ext < 0] = 0
   out = lapply(incip, function(x) if(class(x) == "numeric"){x}else{x[1, ]})
   out = do.call(rbind, out)

@@ -25,7 +25,6 @@ opt_pbd_sim_cpp = function (pars, age = NULL, taxa = NULL, ntry = 1) # soc = 2, 
   
   if(!is.null(age)){
     L = pbdLoop(pars, age, ntry)
-    taxa = 0
   } else if(!is.null(taxa)){
     L = pbdLoop_taxa(pars, taxa, ntry)
     age = L[1, 4]
@@ -34,10 +33,14 @@ opt_pbd_sim_cpp = function (pars, age = NULL, taxa = NULL, ntry = 1) # soc = 2, 
     stop("Either 'age' or 'taxa' must be given!")
   }
   
+  if(sum(L[1, ]) == 0){
+    return(NULL)
+  }
+  
   L0 = L
-  absL = L
-  absL[, 2] = abs(L[, 2])
-  absL[1, 2] = 0
+  # absL = L
+  # absL[, 2] = abs(L[, 2])
+  # absL[1, 2] = 0
   # ttree = try(PBD::detphy(absL, age), silent = TRUE)
   # if(class(ttree) == "try-error"){
   #   return(NULL)
