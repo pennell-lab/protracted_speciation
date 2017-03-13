@@ -3,8 +3,9 @@
 
 
 
-opt_pbd_sim_cpp = function (pars, age = NULL, taxa = NULL, ntry = 1) # soc = 2, ntry = 1) 
+opt_pbd_sim_cpp = function (pars, age = NULL, taxa = NULL, ntry = 1, soc = 2) 
   # ntry - controls the number of times the simulation will try to generate a valid phylogeny
+  # soc	- sets whether the 'age' is the stem (1) or crown (2) age
 {
   require(ape)
   require(PBD)
@@ -24,7 +25,8 @@ opt_pbd_sim_cpp = function (pars, age = NULL, taxa = NULL, ntry = 1) # soc = 2, 
   pars = pars[c(1, 4, 2, 3, 5)]
   
   if(!is.null(age)){
-    L = pbdLoop(pars, age, ntry)
+    L = pbdLoop(pars, age, ntry, soc)
+    L[1, 4] = 0
   } else if(!is.null(taxa)){
     L = pbdLoop_taxa(pars, taxa, ntry)
     age = L[1, 4]

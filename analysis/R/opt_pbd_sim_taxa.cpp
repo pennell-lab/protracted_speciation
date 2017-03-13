@@ -98,7 +98,7 @@ Rcpp::NumericMatrix pbdLoop_taxa(Rcpp::NumericVector pars, int taxa, double ntry
     Rcpp::NumericMatrix L(1, 6);
     L(0, 0) = id;
     L(0, 1) = 0;
-    L(0, 2) = -1 * exp(-10);
+    L(0, 2) = 0;
     L(0, 3) = 0;
     L(0, 4) = -1;
     L(0, 5) = 1;

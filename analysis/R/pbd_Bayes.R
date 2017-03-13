@@ -11,6 +11,7 @@ pbd_Bayes = function(brts, # branching times
                      prior_la1, # logLik function for 'la1' - sp completion
                      prior_mu2 = prior_mu1, # logLik function for 'mu2' - ext incipient
                      step = 0.5, # standard deviation of the normal distribution used to generate new proposed values; can be a function; can also be passed different sd/functions for each variable (i.e., b, mu1, la1, mu2) 
+                     sampler = NULL, # controls how should the parameters be updated; 'NULL' the number of parameters updated is sampled from a binomial distribution; integer between 1:4 updates integer parameters at a time; function to determine how many parameters should be updated each time
                      rep = 1e+5,
                      file = NULL,
                      ...) {
@@ -23,6 +24,7 @@ pbd_Bayes = function(brts, # branching times
   generate_proposal = make_generate_proposal(step)
   prior_logLik = make_prior_logLik(prior_b, prior_mu1, prior_la1, prior_mu2)
   logLik_fun = opt_loglik(brts = brts, ...)
+  sampler_fun = make_sampler(sampler)
   
   
   if(is.null(file)){
@@ -47,7 +49,7 @@ pbd_Bayes = function(brts, # branching times
     
     new.pars = setNames(initparsopt, c("b", "mu1", "la1", "mu2"))
     for(i in 1:rep){
-      par = sample(c("b", "mu1", "la1", "mu2"), size = 1)
+      par = sampler_fun()
       proposal = generate_proposal(var = new.pars, par = par)
       new.pars[par] = proposal
       
@@ -79,6 +81,8 @@ pbd_Bayes = function(brts, # branching times
     
     return(out)
   }
+  
+  
   if(class(file) == "character"){
     # initializing the output
     logLik1 = logLik_fun(pars1 = initparsopt)
@@ -93,7 +97,7 @@ pbd_Bayes = function(brts, # branching times
     old.Lik = c(logLik1, prior1, post1)
     for(i in 1:rep){
       cat(paste0(i, "\n"))
-      par = sample(c("b", "mu1", "la1", "mu2"), size = 1)
+      par = sampler_fun()
       proposal = generate_proposal(var = new.pars, par = par)
       new.pars[par] = proposal
       
@@ -108,19 +112,19 @@ pbd_Bayes = function(brts, # branching times
       accept = exp(ratio) > runif(1)
       if(is.na(accept) | is.nan(accept)){
         converged = FALSE
-        cat(old.Lik, old.pars, accept, par, converged, 
+        cat(old.Lik, old.pars, accept, paste(par, collapse = "_"), converged, 
             file = output, sep = "\t")
         new.pars = old.pars
       } else{
         converged = TRUE
         if(accept){
           cat(new.logLik, new.prior, new.post, new.pars,
-              accept, par, converged,
+              accept, paste(par, collapse = "_"), converged,
               file = output, sep = "\t")
           old.Lik = c(new.logLik, new.prior, new.post)
           old.pars = new.pars
         } else{
-          cat(old.Lik, old.pars, accept, par, converged, 
+          cat(old.Lik, old.pars, accept, paste(par, collapse = "_"), converged, 
               file = output, sep = "\t")
           new.pars = old.pars
         }

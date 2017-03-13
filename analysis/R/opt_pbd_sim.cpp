@@ -75,54 +75,59 @@ int get_id(NumericVector vec){
 
 
 // [[Rcpp::export]]
-Rcpp::NumericMatrix pbdLoop(Rcpp::NumericVector pars, double age, double ntry){
-  double t = 0;
-  int id1, id, Sid, Ng, Ni;
-  Rcpp::NumericVector sg, si, probs;
-  Rcpp::NumericMatrix L(1, 6);
-  double denom;
+Rcpp::NumericMatrix pbdLoop(Rcpp::NumericVector pars, double age, double ntry, double soc){
   
-  int parent, iddie, todie, idcomplete, tocomplete, event;
+  double t, denom;
+  int id, Sid; //int Sid1 = 0;
+  int event, Ng, Ni;
+  Rcpp::NumericVector sg, si, vec, probs;
+  
+  int parent, iddie, todie, idcomplete, tocomplete;
   Rcpp::NumericVector indices = NumericVector::create(1, 2, 3, 4, 5);
-  Rcpp::NumericVector vec;
+  Rcpp::NumericMatrix L(1, 6);
   
   
-  while(1) {
-    id1 = 0;
-    id = id1 + 1;
+  while(ntry > 0){
+    id = 1;
     Sid = 1;
     sg = NumericVector::create(NA_REAL, id);
     si = NumericVector::create(NA_REAL);
+    Ng = sg.size() - 1;
+    Ni = si.size() - 1;
+    Rcpp::NumericMatrix L(1, 6);
     L(0, 0) = id;
     L(0, 1) = 0;
-    L(0, 2) = -1 * exp(-10);
+    L(0, 2) = 0;
     L(0, 3) = 0;
     L(0, 4) = -1;
     L(0, 5) = 1;
-    Ng = sg.size() - 1;
-    Ni = si.size() - 1;
     probs = estimateProbs(pars, Ng, Ni);
     denom = sum(probs);
     probs = probs / denom;
-    t = t - log(Rcpp::runif(1)[0]) / denom;
+    
+    if(soc == 2){
+      t = 0;
+    } else{
+      t = t - log(Rcpp::runif(1)[0]) / denom; 
+    }
     
     
     while(t <= age){
       event = Rcpp::RcppArmadillo::sample(indices, 1, FALSE, probs)[0];
       switch(event){
-      case (1): {
+      case (1): { 
         parent = get_which(sg);
         id += 1;
-        vec = NumericVector::create(id, parent, t, -1, -1, L(abs(parent) - id1 - 1, 5));
+        vec = NumericVector::create(id, parent, t, -1, -1, L(abs(parent) - 1, 5));
         L = addRow(L, vec);
         si.insert(si.end(), -id);
         Ni += 1;
         break;
-      }
+      } 
       case (2): {
         iddie = get_id(sg);
         todie = sg(iddie);
-        L(todie - id1 - 1, 4) = t;
+        L(todie - 1, 4) = t;
         sg.erase(sg.begin() + iddie);
         Ng -= 1;
         break;
@@ -130,9 +135,9 @@ Rcpp::NumericMatrix pbdLoop(Rcpp::NumericVector pars, double age, double ntry){
       case (3): {
         idcomplete = get_id(si);
         tocomplete = abs(si(idcomplete));
-        L(tocomplete - id1 - 1, 3) = t;
+        L(tocomplete - 1, 3) = t;
         Sid += 1;
-        L(tocomplete - id1 - 1, 5) = Sid;
+        L(tocomplete - 1, 5) = Sid;
         sg.insert(sg.end(), tocomplete);
         si.erase(si.begin() + idcomplete);
         Ng += 1;
@@ -142,16 +147,16 @@ Rcpp::NumericMatrix pbdLoop(Rcpp::NumericVector pars, double age, double ntry){
       case (4): {
         parent = get_which(si);
         id += 1;
-        vec = NumericVector::create(id, parent, t, -1, -1, L(abs(parent) - id1 - 1, 5));
+        vec = NumericVector::create(id, parent, t, -1, -1, L(abs(parent) - 1, 5));
         L = addRow(L, vec);
         si.insert(si.end(), -id);
         Ni += 1;
         break;
-      } 
+      }
       case (5): {
         iddie = get_id(si);
         todie = abs(si[iddie]);
-        L(todie - id1 - 1, 4) = t;
+        L(todie - 1, 4) = t;
         si.erase(si.begin() + iddie);
         Ni -= 1;
         break;
@@ -169,16 +174,22 @@ Rcpp::NumericMatrix pbdLoop(Rcpp::NumericVector pars, double age, double ntry){
     }
     
     ntry -= 1;
-    if((Ng + Ni) < 2){ // if the simulation failed to meet the parameters
-      if(ntry > 0){
-        t = 0;
-      } else{
-        break;
-      }
+    if((Ng + Ni) > 2){ // if the simulation worked
+      return L;
     }
   }
   
   
   return L;
 }
+
+
+
+
+
+
+
+
+
+
 
