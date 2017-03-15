@@ -96,7 +96,6 @@ pbd_Bayes = function(brts, # branching times
     old.pars = new.pars
     old.Lik = c(logLik1, prior1, post1)
     for(i in 1:rep){
-      cat(paste0(i, "\n"))
       par = sampler_fun()
       proposal = generate_proposal(var = new.pars, par = par)
       new.pars[par] = proposal
