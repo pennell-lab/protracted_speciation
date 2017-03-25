@@ -13,6 +13,7 @@ load(file = "Botero14.RData")
 #jetz = read.tree("analysis/data/Jetz_etal/EricsonStage2_0001_1000/AllBirdsEricson1_reduced.tre")
 jetz = read.tree("AllBirdsEricson1_reduced.tre")
 # check which sp are present in the table and drops the ones that are not
+# there's 3300sp missing from 9993sp total
 # miss = lapply(jetz, function(x) which(!x$tip.label %in% birds$SPECIES))
 # jj = mapply(function(p, m) drop.tip(p, m), p = jetz, m = miss, SIMPLIFY = FALSE)
 # sapply(jj, Ntip)
@@ -21,7 +22,7 @@ jetz = read.tree("AllBirdsEricson1_reduced.tre")
 
 
 # run the analysis
-cores = 5
+cores = 10
 rep = 5e+4
 chains = 10
 files = paste0("Jetz_Botero_first_try_phy_", 1:length(jetz))

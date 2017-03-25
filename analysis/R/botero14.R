@@ -27,6 +27,7 @@ tropical = birds %>%
 temperate = birds %>%
   filter(LAT.RANGE == "Temperate") %>%
   select(SPECIES,SUBSPECIES)
+levels(birds$LAT.RANGE) = paste(levels(birds$LAT.RANGE), table(birds$LAT.RANGE))
 gg = ggplot(birds, aes(SUBSPECIES)) + geom_histogram() + facet_grid(. ~ LAT.RANGE)
 gg
 ggsave("analysis/output/subspecies_per_region_Botero14.pdf", gg)
