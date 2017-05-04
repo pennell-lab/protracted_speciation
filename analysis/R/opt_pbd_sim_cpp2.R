@@ -1,70 +1,34 @@
 
-source("get_phylo.R")
-try = lapply(1:10, function(i) opt_pbd_sim_cpp2(1, 0, 1, 10, 0, 0.5, taxa = 100))
-Ls = lapply(try, "[[", 1)
-step1 = lapply(Ls, twoL)
-step2 = lapply(step1, function(x) lapply(x, get_phylo))
-phy = mapply(combineL, phy1 = lapply(step2, "[[", 1), phy2 = lapply(step2, "[[", 2), SIMPLIFY = FALSE)
+#setwd("~/Desktop/gitHub/protracted_sp/analysis/R/")
+
+# CLASSIC
+source("opt_pbd_sim_cpp.R")
+try = lapply(1:3, function(i) opt_pbd_sim_cpp(c(1, 1, 0, 0.3, 0.5), taxa = 10, ntry = 1000))
+ls = lapply(try, "[[", 1)
+phy = lapply(ls, get_phylo)
+plot(phy[[1]]);axisPhylo()
+
+# VARIABLE
+try = lapply(1:3, function(i) opt_pbd_sim_cpp2(1, 0.3, 1, 100, 0, 0.5, trans = 0.5, taxa = 10, ntry = 1000))
+ls = lapply(try, "[[", 1)
+phy = lapply(ls, get_phylo)
 plot(phy[[1]]);axisPhylo()
 
 
-#phy1=aa[[1]];phy2=aa[[2]]
-combineL = function(phy1, phy2){
-  Nnode = phy1$Nnode + phy2$Nnode + 1
-  tips = sapply(list(phy1, phy2), Ntip)
-  # use the 1st phylo as reference
-  edge = phy1$edge
-  
-  # modify "edge" to include the nodes and tips from the other phylo
-  edge[ , 1] = edge[ , 1] + tips[2] + 1
-  edge[ , 2] = sapply(edge[ , 2], function(x) ifelse(x > tips[1], x + tips[2] + 1, x))
-  edge = rbind(c(sum(tips) + 1, sum(tips) + 2), edge) # add node that conects the 2 phylos
-  # modify the edge from phylo2 to include the nodes and tips from the other phylo
-  ee = phy2$edge
-  ee[ , 1] = ee[ , 1] + max(edge) - tips[2]
-  ee[ , 2] = sapply(ee[ , 2], function(x) ifelse(x > tips[2], x + max(edge) - tips[2], x + tips[1]))
-  edge = rbind(edge, c(sum(tips) + 1, max(edge) + 1), ee) # paste the 2 edges, adding the connection to the second phylo
-  
-  # creates the edge.length
-  edge.length = c(phy1$root.edge, phy1$edge.length, phy2$root.edge, phy2$edge.length)
-  
-  out = list("edge" = edge, "edge.length" = edge.length, "Nnode" = Nnode, "tip.label" = paste0("sp.", 1:sum(tips)))
-  class(out) = "phylo"
-  
-  return(out)
-}
-#aa=twoL(try[[1]][[1]])
-twoL = function(L){
-  out = list()
-  for(i in 1:2){
-    ind = sort(open_tree(L, i))
-    out[[i]] = L[c(i, ind), ]
-    sp = length(unique(out[[i]][ , 6]))
-    or = order(out[[i]][ , 6])
-    mul = table(out[[i]][ , 6])
-    out[[i]][or, 6] = rep(1:sp, mul)
-  }
-  out[[2]][1, 1] = 1
-  out[[2]][ , 2] = sapply(out[[2]][ , 2], function(x) ifelse(x == 2, 1, x))
-  
-  names(out) = c("L1", "L2")
-  
-  return(out)
-}
-#mat=L;ind=1
-open_tree = function(mat, ind){
-  out = which(mat[ , 2] == mat[ind, 1])
-  if(length(out) > 0){
-    for(i in 1:length(out)){
-      aux2 = open_tree(out[i], mat = mat)
-      out = c(out, aux2)
-    }
-  }
-  return(out)
-}
+# FIXED
+try = lapply(1:3, function(i) opt_pbd_sim_cpp2(1, 0.3, 1, 100, 0, 0.5, taxa = 10, ntry = 1000))
+Ls = lapply(try, "[[", 1)
+step1 = lapply(Ls, twoL)
+source("get_phylo.R")
+step2 = lapply(step1, function(x) lapply(x, get2phylo))
+phy = mapply(combineL, phy1 = lapply(step2, "[[", 1), phy2 = lapply(step2, "[[", 2), SIMPLIFY = FALSE)
+plot(phy[[3]]);axisPhylo()
+
+
 
 
 opt_pbd_sim_cpp2 = function (b1, mu1, la1, la2, b2, mu2,
+                             trans = NULL,
                              age = NULL, taxa = NULL, ntry = 1, soc = 2) 
   # ntry - controls the number of times the simulation will try to generate a valid phylogeny
   # soc	- sets whether the 'age' is the stem (1) or crown (2) age
@@ -76,6 +40,7 @@ opt_pbd_sim_cpp2 = function (b1, mu1, la1, la2, b2, mu2,
   require(RcppArmadillo)
   
   sourceCpp("opt_pbd_sim_taxa2tts.cpp")
+  sourceCpp("opt_pbd_sim_taxa2ttsVar.cpp")
   
   
   # la1 = pars[1]
@@ -86,10 +51,13 @@ opt_pbd_sim_cpp2 = function (b1, mu1, la1, la2, b2, mu2,
   # need to be ordered accordingly 
   pars = c(b1, mu1, la1, la2, b2, mu2)
   
-  L = pbdLoop_taxa2tts(pars, taxa, ntry)
+  if(is.null(trans)){
+    L = pbdLoop_taxa2tts(pars, taxa, ntry)
+  } else{
+    L = pbdLoop_taxa2ttsVar(pars, trans, taxa, ntry)
+  }
   age = L[1, 4]
   L[1, 4] = 0
-  
   
   if(sum(L[1, ]) == 0){
     return(NULL)

@@ -3,7 +3,12 @@
 
 
 
-opt_pbd_sim_cpp = function (pars, age = NULL, taxa = NULL, ntry = 1, soc = 2) 
+opt_pbd_sim_cpp = function (pars = NULL, 
+                            b1 = NULL, mu1 = NULL, la1 = NULL,
+                            la2 = NULL, b2 = NULL, mu2 = NULL,
+                            trans = NULL,
+                            age = NULL, taxa = NULL, 
+                            ntry = 1, soc = 2) 
   # ntry - controls the number of times the simulation will try to generate a valid phylogeny
   # soc	- sets whether the 'age' is the stem (1) or crown (2) age
 {
@@ -14,26 +19,41 @@ opt_pbd_sim_cpp = function (pars, age = NULL, taxa = NULL, ntry = 1, soc = 2)
   require(RcppArmadillo)
   sourceCpp("opt_pbd_sim.cpp")
   sourceCpp("opt_pbd_sim_taxa.cpp")
+  sourceCpp("opt_pbd_sim_taxa2tts.cpp")
+  sourceCpp("opt_pbd_sim_taxa2ttsVar.cpp")
   
-  
-  # la1 = pars[1]
-  # la2 = pars[2]
-  # la3 = pars[3]
-  # mu1 = pars[4]
-  # mu2 = pars[5]
-  # need to be ordered accordingly 
-  pars = pars[c(1, 4, 2, 3, 5)]
-  
-  if(!is.null(age)){
-    L = pbdLoop(pars, age, ntry, soc)
-    L[1, 4] = 0
-  } else if(!is.null(taxa)){
-    L = pbdLoop_taxa(pars, taxa, ntry)
+  if(!is.null(pars)){
+    # la1 = pars[1]
+    # la2 = pars[2]
+    # la3 = pars[3]
+    # mu1 = pars[4]
+    # mu2 = pars[5]
+    # need to be ordered accordingly 
+    pars = pars[c(1, 4, 2, 3, 5)]
+    
+    if(!is.null(age)){
+      L = pbdLoop(pars, age, ntry, soc)
+      L[1, 4] = 0
+    } else if(!is.null(taxa)){
+      L = pbdLoop_taxa(pars, taxa, ntry)
+      age = L[1, 4]
+      L[1, 4] = 0
+    } else{
+      stop("Either 'age' or 'taxa' must be given!")
+    }
+  } else{
+    pars = c(b1, mu1, la1, la2, b2, mu2)
+    
+    if(is.null(trans)){
+      L = pbdLoop_taxa2tts(pars, taxa, ntry)
+    } else{
+      L = pbdLoop_taxa2ttsVar(pars, trans, taxa, ntry)
+    }
     age = L[1, 4]
     L[1, 4] = 0
-  } else{
-    stop("Either 'age' or 'taxa' must be given!")
   }
+  
+  
   
   if(sum(L[1, ]) == 0){
     return(NULL)
@@ -77,18 +97,18 @@ opt_pbd_sim_cpp = function (pars, age = NULL, taxa = NULL, ntry = 1, soc = 2)
   # reconL[, 3:5][which(reconL[, 3:5] == -1)] = age + 1
   # reconL[, 3:5] = age - reconL[, 3:5]
   # reconL = reconL[order(reconL[, 1]), ]
-
+  
   Ltreeslist = list(# tree = tree,
-                    # stree_random = stree_random, 
-                    # stree_oldest = stree_oldest,
-                    # stree_youngest = stree_youngest, 
-                    # recontree = recontree, 
-                    # reconL = reconL,
-                    # sL_random = sL_random,
-                    # sL_oldest = sL_oldest, 
-                    # sL_youngest = sL_youngest,
-                    L = L,
-                    L0 = L0)
+    # stree_random = stree_random, 
+    # stree_oldest = stree_oldest,
+    # stree_youngest = stree_youngest, 
+    # recontree = recontree, 
+    # reconL = reconL,
+    # sL_random = sL_random,
+    # sL_oldest = sL_oldest, 
+    # sL_youngest = sL_youngest,
+    L = L,
+    L0 = L0)
   return(Ltreeslist)
 }
 
