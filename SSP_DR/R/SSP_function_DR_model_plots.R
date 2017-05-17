@@ -290,8 +290,12 @@ anova(mod.b.ssp)
 mod.b = lm(dr.mean ~ b, data = datsummary)
 anova(mod.b)
 summary(mod.b)
-mod.pbd = lm(pbd.specia ~ b, data = datsummary)
-anova(mod.pbd)
+mod.pbd.spe = lm(pbd.specia ~ b, data = datsummary)
+anova(mod.pbd.spe)
+mod.pbd.la1 = lm(pbd.la1 ~ b, data = datsummary)
+anova(mod.pbd.la1)
+mod.pbd.b = lm(pbd.b ~ b, data = datsummary)
+anova(mod.pbd.b)
 # PLOT
 b.ssp = ggplot(datsummary, aes(x = b, y = ssp.mean)) + geom_point()
 b.dr = ggplot(datsummary, aes(x = b, y = dr.mean)) + geom_point() + geom_smooth(method = "lm")
@@ -299,6 +303,17 @@ grid.arrange(b.ssp, b.dr)
 ggsave(grid.arrange(b.ssp, b.dr), filename = "protracted_sp/SSP_DR/output/ssp_Family_b.pdf")
 ggplot(datsummary, aes(x = pbd.specia, y = ssp.mean)) + geom_point()
 #########
+### diversification and PBD
+# MODEL
+mod.pbd.bdLik = lm(pbd.specia ~ bdLik, data = datsummary)
+anova(mod.pbd.bdLik)
+mod.pbd.la1.bdLik = lm(pbd.la1 ~ bdLik, data = datsummary)
+anova(mod.pbd.la1.bdLik)
+mod.pbd.b.bdLik = lm(pbd.b ~ bdLik, data = datsummary)
+anova(mod.pbd.b.bdLik)
+# PLOT
+pbd2plot = datsummary %>% select(bdLik, pbd.specia, pbd.la1, pbd.b) %>% melt(id.vars = "bdLik")
+ggplot(pbd2plot, aes(bdLik, value)) + geom_point() + geom_smooth(method = "lm") + facet_grid(variable ~ ., scales = "free")
 ### diversification and subspeciation rates
 # MODEL
 mod.phill = lm(ssp.lambda ~ bdLik, data = datsummary)

@@ -3,7 +3,7 @@
 
 # from Phillimore 2010 "SUBSPECIES ORIGINATION AND EXTINCTION IN BIRDS"
 # Given a subspeciation rate (lambda) and subspecies extinction rate (mu), I estimated the likelihood (l_i = P(n|t)) of observing n subspecies in species i of age t following Equation 3 and Equation 4 (Bokma 2003; Ricklefs 2007, 2009), where the relative extinction rate epsilon = mu / lambda.
-#   E(n) = e^(lambda * (1 - epsilon) * t) = epsilon^((lambda - mu) * t)                Eq.3
+#   E(n) = e^(lambda * (1 - epsilon) * t) = e^((lambda - mu) * t)                Eq.3
 #   P(n|t) = (1 - epsilon) * ( [E(n) - 1]^(n-1) / [E(n) - epsilon]^n )                  Eq.4
 phillimore_model = function(n, t, rate, epsilon){
   LL = function(rate, epsilon){

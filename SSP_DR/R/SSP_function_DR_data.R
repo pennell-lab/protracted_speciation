@@ -200,22 +200,16 @@ datsummary$pbd.mu = NA
 datsummary$pbd.mu2 = NA
 for(i in 1:length(bdFam)){
   ind = which(datsummary$Family == names(bdFam)[i])
-  if(is.na(bdFam[[i]])){
-    datsummary$b[ind] = NA
-    datsummary$bdLik[ind] = NA
-    datsummary$pbd.b[ind] = NA
-    datsummary$pbd.la1[ind] = NA
-    datsummary$pbd.mu[ind] = NA
-    datsummary$pbd.mu2[ind] = NA
-  } else{
-    datsummary$b[ind] = bdFam[[i]][[4]][2] / (1 - bdFam[[i]][[4]][1])
-    datsummary$bdLik[ind] = bdFam[[i]][[4]][2]
-    datsummary$pbd.specia[ind] = (PBDfam[[i]]$b - PBDfam[[i]]$mu_2) / PBDfam[[i]]$lambda_1
-    datsummary$pbd.b[ind] = PBDfam[[i]]$b
-    datsummary$pbd.la1[ind] = PBDfam[[i]]$lambda_1
-    datsummary$pbd.mu[ind] = PBDfam[[i]]$mu_1
-    datsummary$pbd.mu2[ind] = PBDfam[[i]]$mu_2
-  }
+  if(!is.na(bdFam[[i]]))
+    if(all(c(PBDfam[[i]]$b, PBDfam[[i]]$lambda_1, PBDfam[[i]]$mu_1, PBDfam[[i]]$mu_2) < 100)){
+      datsummary$b[ind] = bdFam[[i]][[4]][2] / (1 - bdFam[[i]][[4]][1])
+      datsummary$bdLik[ind] = bdFam[[i]][[4]][2]
+      datsummary$pbd.specia[ind] = (PBDfam[[i]]$b - PBDfam[[i]]$mu_2) / PBDfam[[i]]$lambda_1
+      datsummary$pbd.b[ind] = PBDfam[[i]]$b
+      datsummary$pbd.la1[ind] = PBDfam[[i]]$lambda_1
+      datsummary$pbd.mu[ind] = PBDfam[[i]]$mu_1
+      datsummary$pbd.mu2[ind] = PBDfam[[i]]$mu_2
+    }
 }
 summary(datsummary)
 
