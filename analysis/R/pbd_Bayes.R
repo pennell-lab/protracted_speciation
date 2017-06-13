@@ -1,5 +1,5 @@
 ###########################################
-#   Function to fit the protracted sp model
+#   Function to fit the protracted BD model
 # using Bayesian statistics developed based
 # on code from the 'PBD' package
 ##########################################
@@ -12,6 +12,7 @@ pbd_Bayes = function(brts, # branching times
                      prior_mu2 = prior_mu1, # logLik function for 'mu2' - ext incipient
                      step = 0.5, # standard deviation of the normal distribution used to generate new proposed values; can be a function; can also be passed different sd/functions for each variable (i.e., b, mu1, la1, mu2) 
                      sampler = NULL, # controls how should the parameters be updated; 'NULL' the number of parameters updated is sampled from a binomial distribution; integer between 1:4 updates integer parameters at a time; function to determine how many parameters should be updated each time
+                     upper = c(20, 10, 20, 20), # upper limit for the parameters proposal; can be NULL (ie, NO limit) or a vector of 4 in order = "b", "mu1", "la1", "mu2".
                      rep = 1e+5,
                      file = NULL,
                      ...) {
@@ -25,7 +26,7 @@ pbd_Bayes = function(brts, # branching times
   prior_logLik = make_prior_logLik(prior_b, prior_mu1, prior_la1, prior_mu2)
   logLik_fun = opt_loglik(brts = brts, ...)
   sampler_fun = make_sampler(sampler)
-  
+  get_ratio_proposal = make_ratio_proposal(upper)
   
   if(is.null(file)){
     # initializing the output
@@ -51,6 +52,7 @@ pbd_Bayes = function(brts, # branching times
     for(i in 1:rep){
       par = sampler_fun()
       proposal = generate_proposal(var = new.pars, par = par)
+      ratio.proposal = get_ratio_proposal(new.pars, proposal, par)
       new.pars[par] = proposal
       
       new.logLik = logLik_fun(pars1 = new.pars)
@@ -59,11 +61,11 @@ pbd_Bayes = function(brts, # branching times
       
       ratio.logLik = new.logLik - out[i, "logLik"]
       ratio.prior = new.prior - out[i, "prior"]
-      ratio = ratio.logLik + ratio.prior
+      ratio = ratio.logLik + ratio.prior + ratio.proposal
       
       accept = exp(ratio) > runif(1)
       out[i+1, "accepted"] = accept
-      out[i+1, "proposed.par"] = par
+      out[i+1, "proposed.par"] = paste0(par, collapse = "_")
       if(is.na(accept) | is.nan(accept)){
         out[i+1, "converged"] = FALSE
         out[i+1, 1:7] = out[i, 1:7]
@@ -98,6 +100,7 @@ pbd_Bayes = function(brts, # branching times
     for(i in 1:rep){
       par = sampler_fun()
       proposal = generate_proposal(var = new.pars, par = par)
+      ratio.proposal = get_ratio_proposal(new.pars, proposal, par)
       new.pars[par] = proposal
       
       new.logLik = logLik_fun(pars1 = new.pars)
@@ -106,7 +109,7 @@ pbd_Bayes = function(brts, # branching times
       
       ratio.logLik = new.logLik - old.Lik[1]
       ratio.prior = new.prior - old.Lik[2]
-      ratio = ratio.logLik + ratio.prior
+      ratio = ratio.logLik + ratio.prior + ratio.proposal
       
       accept = exp(ratio) > runif(1)
       if(is.na(accept) | is.nan(accept)){
@@ -134,12 +137,13 @@ pbd_Bayes = function(brts, # branching times
     
     
     close(output)
+    
+    return(invisible())
   }
 }
 
 
-source("analysis/R/auxiliary_functions.R")
-source("analysis/R/opt_logLik.R")
+source("auxiliary_BPBD.R")
 
 
 

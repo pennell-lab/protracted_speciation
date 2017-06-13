@@ -1,5 +1,4 @@
 
-
 # load("analysis/R/2017_03_01_expand_rcpp/rcpp/pbd_sim_cpp0.3_0.3_0_0_0.1.RData")
 # L = out[[9]]$L
 # age = out[[9]]$L[1, 3]
@@ -26,6 +25,8 @@
 # test = list(L, age)
 
 require(PBD)
+
+
 
 get2phylo = function(L, age){
   ll = length(unique(L[ , 6]))

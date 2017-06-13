@@ -229,7 +229,8 @@ make_generate_proposal = function(step){
     if(length(step) == 1){
       fun = function(var, par){
         x = as.numeric(var[par])
-        r = rnorm(1, mean = 0, sd = step)
+        n = length(par)
+        r = rnorm(n, mean = 0, sd = step)
         new.var = x + ifelse(r < -x, -r, r)
         return(new.var)
       }
@@ -238,7 +239,7 @@ make_generate_proposal = function(step){
       fun = function(var, par){
         x = as.numeric(var[par])
         s = as.numeric(step2[par])
-        r = rnorm(1, mean = 0, sd = s)
+        r = sapply(s, FUN = function(yyy) rnorm(1, mean = 0, sd = yyy))
         new.var = x + ifelse(r < -x, -r, r)
         return(new.var)
       }
@@ -317,6 +318,29 @@ make_sampler = function(sampler){
 
 
 
-
+make_ratio_proposal = function(upp){
+  if(is.null(upp)){
+    fun = function(old, new, id){
+      old = old[id]
+      diff = abs(old - new)
+      old2new = max(1, sum(old < diff) * 2)
+      new2old = max(1, sum(new < diff) * 2)
+      return(old2new / new2old)
+    }
+  } else{
+    if(is.null(names(upp))){
+      upp = structure(upp, names = c("b", "mu1", "la1", "mu2"))
+    }
+    fun = function(old, new, id){
+      old = old[id]
+      lim = upp[id]
+      diff = abs(old - new)
+      old2new = max(1, sum(old < diff | diff > (lim - old)) * 2)
+      new2old = max(1, sum(new < diff | diff > (lim - new)) * 2)
+      return(old2new / new2old)
+    }
+  }
+  return(fun)
+}
 
 
