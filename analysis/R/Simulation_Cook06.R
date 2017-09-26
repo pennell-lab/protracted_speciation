@@ -11,53 +11,58 @@ library(coda)
 
 
 
-# setwd("~/Desktop/gitHub/protracted_sp/analysis/R/")
-# output = "~/Desktop/gitHub/protracted_sp/analysis/R/"
-# 
-# source("opt_pbd_sim_cpp.R")
-# samp_priors = function(){
-#   #b = rlnorm(1, meanlog = 0, sdlog = 1)
-#   b = rexp(1, rate = 0.2)
-#   mu1 = rexp(1, rate = 0.5)
-#   #la1 = rlnorm(1, meanlog = 1, sdlog = 1)
-#   la1 = rexp(1, rate = 0.2)
-#   mu2 = rexp(1, rate = 0.2)
-#   out = c(b, la1, 0, mu1, mu2)
-#   return(out)
-# }
-# 
-# 
-# cores = 16
-# tries = 100
-# ntaxa = 256 # 2^(5:10) = c(32, 64, 128, 256, 512, 1024)
-# Nphy = 3000
-# sim = function(x){
-#   out1 = try(opt_pbd_sim_cpp(pars = x, taxa = ntaxa, ntry = tries), silent = TRUE)
-#   if(class(out1) != "try-error"){
-#     this_age = out1$L[1, 3]
-#     phy = try(get_phylo(out1$L, this_age), silent = TRUE)
-#     return(phy)
-#   }
-#   return(out1)
-# }
-# simulations = mclapply(1:Nphy, FUN = function(x){
-#   while(1){
-#     parameters = samp_priors()
-#     phy = sim(parameters)
-#     if(class(phy) == "phylo"){
-#       phy = drop.fossil(phy)
-#       if(Ntip(phy) == ntaxa){
-#         b = branching.times(phy)
-#         return(list(branches = b/max(b), true.par = parameters[-3]))
-#       }
-#     }
-#   }
-# }, mc.cores = cores)
-# branches = do.call(rbind, lapply(simulations, "[[", 1))
-# true.par = do.call(rbind, lapply(simulations, "[[", 2))
-# colnames(true.par) = c("b", "la1", "mu1", "mu2")
-# rm(simulations)
-# save(branches, true.par, file = paste0(output, "simulation_Cook.RData"))
+setwd("~/Desktop/gitHub/protracted_sp/analysis/R/")
+output = "~/Desktop/gitHub/protracted_sp/analysis/data/"
+
+source("opt_pbd_sim_cpp.R")
+
+
+limits = c(20, 10, 20, 20) # upper bound for parameters; order = "b", "mu1", "la1", "mu2"
+cores = 4
+tries = 100
+ntaxa = 256 # 2^(5:10) = c(32, 64, 128, 256, 512, 1024)
+Nphy = 1000
+samp_priors = function(){
+  while(1){
+    #b = rlnorm(1, meanlog = 0, sdlog = 1)
+    b = rexp(1, rate = 0.2)
+    mu1 = rexp(1, rate = 0.5)
+    #la1 = rlnorm(1, meanlog = 1, sdlog = 1)
+    la1 = rexp(1, rate = 0.2)
+    mu2 = rexp(1, rate = 0.2)
+    out = c(b, la1, 0, mu1, mu2)
+    if(all(b <= limits[1], mu1 <= limits[2], la1 <= limits[3], mu2 <= limits[4])){
+      return(out) 
+    }
+  }
+}
+sim = function(x){
+  out1 = try(opt_pbd_sim_cpp(pars = x, taxa = ntaxa, ntry = tries), silent = TRUE)
+  if(class(out1) != "try-error"){
+    this_age = out1$L[1, 3]
+    phy = try(get_phylo(out1$L, this_age), silent = TRUE)
+    return(phy)
+  }
+  return(out1)
+}
+simulations = mclapply(1:Nphy, FUN = function(x){
+  while(1){
+    parameters = samp_priors()
+    phy = sim(parameters)
+    if(class(phy) == "phylo"){
+      phy = drop.fossil(phy)
+      if(Ntip(phy) == ntaxa){
+        b = branching.times(phy)
+        return(list(branches = b/max(b), true.par = parameters[-3]))
+      }
+    }
+  }
+}, mc.cores = cores)
+branches = do.call(rbind, lapply(simulations, "[[", 1))
+true.par = do.call(rbind, lapply(simulations, "[[", 2))
+colnames(true.par) = c("b", "la1", "mu1", "mu2")
+rm(simulations)
+save(branches, true.par, file = paste0(output, "simulation_Cook.RData"))
 
 
 
@@ -66,10 +71,8 @@ library(coda)
 
 
 
-output = "~/simulation_study/output/"
-load(file = paste0(output, "simulation_Cook.RData"))
+
 source("pbd_Bayes.R")
-cores = 16
 rep = 5e+4
 burnin = ceiling(rep*0.3)
 samp = 100
@@ -108,14 +111,23 @@ prior_mu2 = function(mu2){
   dexp(mu2, rate = 0.2, log = TRUE)
 }
 
-cook = mclapply(1:nrow(branches), FUN = function(j){
-  res = lapply(1:chains, FUN = function(i){
+files = apply(true.par, 1, FUN = function(x) paste0(output, "Bayes_simulation_study_", paste0(round(x,3), collapse = "_")))
+mclapply(1:nrow(branches), FUN = function(j){
+  lapply(1:chains, FUN = function(i){
     pbd_Bayes(brts = branches[j, ],
               initparsopt = rep(i, 4),
               prior_b = prior_b, prior_mu1 = prior_mu1, 
               prior_la1 = prior_la1, prior_mu2 = prior_mu2,
               step = c(1.5, 1.5, 2.5, 2.5), 
-              rep = rep)
+              upper = limits,
+              rep = rep,
+              file = paste(files[[j]], i, sep = "."))
+  })
+}, mc.cores = cores)
+
+cook = mclapply(1:nrow(branches), FUN = function(j){
+  res = lapply(1:chain, function(i) {
+    read.csv(file = paste0(paste(files[[j]], i, sep = "."), "_PBD_Bayes.txt"), sep = "\t", row.names = NULL, as.is = TRUE)
   })
   # combine them into one single data.frame to store all the info
   my.mcmc = lapply(lapply(res, "[", 4:7), mcmc, start = burnin, thin = samp)
@@ -129,7 +141,7 @@ cook = mclapply(1:nrow(branches), FUN = function(j){
     out = matrix(c(get_posterior_quantile(parameters, samples), get_true_quantile(parameters)), ncol = 2)
     rm(samples)
   } else{
-    out = matrix(c(NA, NA), ncol = 2)
+    out = matrix(ncol = 2, nrow = 4)
   }
   return(out)
 }, mc.cores = cores)

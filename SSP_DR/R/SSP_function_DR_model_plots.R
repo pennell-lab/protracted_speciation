@@ -13,6 +13,7 @@ library(dplyr)
 library(reshape2)
 library(ggtree)
 library(ggExtra)
+library(phytools)
 
 
 my.theme = theme(axis.text=element_text(size=12), axis.title=element_text(size=20,face="bold")) 
@@ -84,9 +85,25 @@ bs = 2; fs = 5; off = rep(seq(0,16,by=4), 2); ot = 1
 ggj = ggjetz; for(i in 1:length(aaa)){
   ggj = ggj + geom_cladelabel(aaa[i], label = names(aaa)[i], barsize = bs, color = "black", angle = 270, fontsize = fs, hjust = 0.5, offset.text = ot, offset = off[i])
 }; ggj
+# Using only the species present in BOTERO
+bot = dat %>% filter(dat$sp %in% birds$SPECIES)
+groupInfo2 = split(bot$sp, as.factor(bot$Order))
+jetz2 = drop.tip(jetz, tip = jetz$tip.label[which(!jetz$tip.label %in% bot$sp)])
+jpoints2 = groupOTU(jetz2, groupInfo2)
+ggssp2 = sapply(bot$ssp, function(x)ifelse(is.na(x), 0, x))
+jpoints2$tip.label = sapply(jpoints2$tip.label, function(x)paste0(rep(".",ggssp2[which(bot$sp==x)]), collapse=""))
+ggtree(jpoints2, aes(color = group), layout = "fan") + geom_tiplab2(size = 3)
+ggsave(filename = "protracted_sp/SSP_DR/output/jetz_SSP_fan_col_BOTERO.png",  width = 10, height = 10, units = "in")
+ggtree(jpoints2, aes(color = group), layout = "fan") + theme(legend.position="left", legend.title.align = 0.5)
+ggsave(filename = "protracted_sp/SSP_DR/output/jetz_SSP_col_legend_BOTERO.png",  width = 7, height = 7, units = "in")
 
-facet_plot(ggj, panel = 'Subspecies richness (log)', data = data.frame(sp=dat$sp, ssp=log(dat$ssp+1)), geom = geom_segment, aes(x=0, xend = ssp, y=y, yend=y)) + theme_tree2()
-
+# triangles
+backbone = data.frame(tip.label = sapply(unique(dat$Order), function(x) dat$sp[which(dat$Order == x)[1]]),
+                      clade.label = unique(dat$Order),
+                      N = sapply(unique(dat$Order), function(x) sum(dat$Order == x)),
+                      stringsAsFactors = FALSE)
+jetz.single = drop.tip(phy = jetz, tip = dat$sp[!dat$sp%in%backbone$tip.label])
+backbone$depth = sapply(backbone$tip.label,function(x,y) 0.5*y$edge.length[which(y$edge[,2]==which(y$tip.label==x))],y=jetz.single)
 
 # histogram DR
 ggplot(dat, aes(x = DR)) + 

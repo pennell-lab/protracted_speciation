@@ -3,10 +3,11 @@ library(doParallel)
 library(PBD)
 
 cores = 16
+Nphy = 500
 parameters = expand.grid(data.frame(b = 0.5, mu1 = c(0,0.1,0.2), lambda = c(0.1,0.3,1), mu2 = c(0,0.1,0.2)))
 simulations = mclapply(1:nrow(parameters), FUN = function(k){
   sim = list()
-  for(i in 1:1000){
+  for(i in 1:Nphy){
     while(1){
       aux = try(pbd_sim_cpp(pars = parameters[k , ], soc = 2, age = 15, plotltt = 0))
       if(class(aux) == "numeric") if(max(aux) == 15){
@@ -15,6 +16,7 @@ simulations = mclapply(1:nrow(parameters), FUN = function(k){
       }
     }
   }
+  return(sim)
 }, mc.cores = cores)
 save(simulations, file = "etienne_simulations.RData")
 

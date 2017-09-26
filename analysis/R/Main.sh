@@ -1,1 +1,0 @@
-R -f first_try.R > erro.txt

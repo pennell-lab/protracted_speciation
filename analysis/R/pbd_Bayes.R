@@ -22,11 +22,11 @@ pbd_Bayes = function(brts, # branching times
   }
   
   # making functions
-  generate_proposal = make_generate_proposal(step)
+  generate_proposal = make_generate_proposal(step, upper)
   prior_logLik = make_prior_logLik(prior_b, prior_mu1, prior_la1, prior_mu2)
   logLik_fun = opt_loglik(brts = brts, ...)
   sampler_fun = make_sampler(sampler)
-  get_ratio_proposal = make_ratio_proposal(upper)
+  ratio_proposal = make_ratio_proposal(upper)
   
   if(is.null(file)){
     # initializing the output
@@ -52,7 +52,7 @@ pbd_Bayes = function(brts, # branching times
     for(i in 1:rep){
       par = sampler_fun()
       proposal = generate_proposal(var = new.pars, par = par)
-      ratio.proposal = get_ratio_proposal(new.pars, proposal, par)
+      ratio.proposal = ratio_proposal(new.pars, proposal, par)
       new.pars[par] = proposal
       
       new.logLik = logLik_fun(pars1 = new.pars)
@@ -100,7 +100,7 @@ pbd_Bayes = function(brts, # branching times
     for(i in 1:rep){
       par = sampler_fun()
       proposal = generate_proposal(var = new.pars, par = par)
-      ratio.proposal = get_ratio_proposal(new.pars, proposal, par)
+      ratio.proposal = ratio_proposal(new.pars, proposal, par)
       new.pars[par] = proposal
       
       new.logLik = logLik_fun(pars1 = new.pars)

@@ -9,7 +9,7 @@ opt_loglik = function(pars1, pars1f = c(function(t, pars) {pars[1]},
                                         function(t, pars) {pars[2]},
                                         function(t, pars) {pars[3]},
                                         function(t, pars) {pars[4]}),
-                      pars2 = c(1, 1, 2, 1, "lsoda", 0, 0), 
+                      pars2 = c(1, 0, 2, 0, "lsoda", 0, 0), 
                       brts, missnumspec = 0){
   brts = sort(abs(brts))
   abstol = 1e-16
@@ -100,7 +100,7 @@ opt_loglik = function(pars1, pars1f = c(function(t, pars) {pars[1]},
         return(as.numeric(loglik))
       }
       
-    } else{ # m<=0
+    } else{ # m==0
       fun = function (pars1)
       {
         pars1 = c(pars1f, pars1)
@@ -224,8 +224,21 @@ start.output = function(outputName, logLik, prior, posterior, parameters){
   return(output)
 }
 
-make_generate_proposal = function(step){
-  if(is.numeric(step)){
+make_generate_proposal = function(step, upp = NULL){
+  if(!is.null(upp)){
+    if(is.null(names(upp))){
+      upp = structure(upp, names = c("b", "mu1", "la1", "mu2"))
+    }
+  }
+  if(class(step) %in% c("numeric", "list", "function")){
+    UseMethod(generic = "make_generate_proposal", object = step)
+  } else{
+    stop("'step' must be one of the three: a vector with the standard deviation of the step; 
+         a function; or a list of 4 functions.")
+  }
+}
+make_generate_proposal.numeric = function(step, upp = NULL){
+  if(is.null(upp)){
     if(length(step) == 1){
       fun = function(var, par){
         x = as.numeric(var[par])
@@ -235,40 +248,75 @@ make_generate_proposal = function(step){
         return(new.var)
       }
     } else{
-      step2 = setNames(step, c("b", "mu1", "la1", "mu2"))
+      if(is.null(names(step))){
+        names(step) = c("b", "mu1", "la1", "mu2")
+      }
       fun = function(var, par){
         x = as.numeric(var[par])
-        s = as.numeric(step2[par])
+        s = as.numeric(step[par])
         r = sapply(s, FUN = function(yyy) rnorm(1, mean = 0, sd = yyy))
         new.var = x + ifelse(r < -x, -r, r)
         return(new.var)
       }
     }
-  } else if(class(step) == "function"){
-    # eg, step = function(x) x+runif(length(x), -1, 1)
-    fun = function(var, par){
-      x = as.numeric(var[par])
-      new.var = step(x)
-      return(new.var)
-    }
-  } else if(class(step) == "list"){
-    # eg, step = list(function(x) x+runif(1, -1, 1),
-    #                 function(x) x+runif(1, -1, 1),
-    #                 function(x) x+runif(1, -1, 1),
-    #                 function(x) x+rexp(1, 1))
-    names(step) = c("b", "mu1", "la1", "mu2")
-    fun = function(var, par){
-      x = as.numeric(var[par])
-      new.var = mapply(function(p, xxx) step[[p]](xxx), p = par, xxx = x)
-      return(new.var)
-    }
   } else{
-    stop("'step' must be one of the three: a vector with the standard deviation of the step; 
-         a function; or a list of 4 functions.")
+    zeros = rep(0, 4)
+    if(length(step) == 1){
+      fun = function(var, par){
+        while(1){
+          x = as.numeric(var[par])
+          n = length(par)
+          r = rnorm(n, mean = 0, sd = step)
+          new.var = x + ifelse(r < -x, -r, r)
+          if(all(new.var > zeros & new.var <  upp)){
+            return(new.var)
+          }
+        }
+      }
+    } else{
+      if(is.null(names(step))){
+        names(step) = c("b", "mu1", "la1", "mu2")
+      }
+      fun = function(var, par){
+        while(1){
+          x = as.numeric(var[par])
+          s = as.numeric(step[par])
+          r = sapply(s, FUN = function(yyy) rnorm(1, mean = 0, sd = yyy))
+          new.var = x + ifelse(r < -x, -r, r)
+          if(all(new.var > zeros & new.var <  upp)){
+            return(new.var)
+          }
+        }
+      }
+    }
   }
-  
+  return(fun)
+} 
+make_generate_proposal.function = function(step, ...){
+  # eg, step = function(x) x+runif(length(x), -1, 1)
+  fun = function(var, par){
+    x = as.numeric(var[par])
+    new.var = step(x)
+    return(new.var)
+  }
   return(fun)
 }
+make_generate_proposal.list = function(step, ...){
+  # eg, step = list(function(x) x+runif(1, -1, 1),
+  #                 function(x) x+runif(1, -1, 1),
+  #                 function(x) x+runif(1, -1, 1),
+  #                 function(x) x+rexp(1, 1))
+  if(is.null(names(step))){
+    names(step) = c("b", "mu1", "la1", "mu2")
+  }
+  fun = function(var, par){
+    x = as.numeric(var[par])
+    new.var = mapply(function(p, xxx) step[[p]](xxx), p = par, xxx = x)
+    return(new.var)
+  }
+  return(fun)
+} 
+
 
 
 make_prior_logLik = function(prior_b, prior_mu1, prior_la1, prior_mu2){
@@ -319,28 +367,32 @@ make_sampler = function(sampler){
 
 
 make_ratio_proposal = function(upp){
-  if(is.null(upp)){
-    fun = function(old, new, id){
-      old = old[id]
-      diff = abs(old - new)
-      old2new = max(1, sum(old < diff) * 2)
-      new2old = max(1, sum(new < diff) * 2)
-      return(old2new / new2old)
-    }
-  } else{
-    if(is.null(names(upp))){
-      upp = structure(upp, names = c("b", "mu1", "la1", "mu2"))
-    }
-    fun = function(old, new, id){
-      old = old[id]
-      lim = upp[id]
-      diff = abs(old - new)
-      old2new = max(1, sum(old < diff | diff > (lim - old)) * 2)
-      new2old = max(1, sum(new < diff | diff > (lim - new)) * 2)
-      return(old2new / new2old)
-    }
+  UseMethod("make_ratio_proposal", upp)
+}
+make_ratio_proposal.null = function(upp){
+  fun = function(old, new, id){
+    old = old[id]
+    diff = abs(old - new)
+    old2new = max(1, sum(old < diff) * 2)
+    new2old = max(1, sum(new < diff) * 2)
+    return(old2new / new2old)
+  }
+  return(fun)
+} 
+make_ratio_proposal.numeric = function(upp){
+  if(is.null(names(upp))){
+    upp = structure(upp, names = c("b", "mu1", "la1", "mu2"))
+  }
+  fun = function(old, new, id){
+    old = old[id]
+    lim = upp[id]
+    diff = abs(old - new)
+    old2new = max(1, sum(old < diff | diff > (lim - old)) * 2)
+    new2old = max(1, sum(new < diff | diff > (lim - new)) * 2)
+    return(old2new / new2old)
   }
   return(fun)
 }
+
 
 

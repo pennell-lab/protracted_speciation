@@ -111,12 +111,12 @@ read.BPBD = function(samp = 100,
     Ncore = max(detectCores()-1, 1)
   }
   
-  Nloop = length(levels(par$control))
+  Nloop = length(unique(par$control))
   my.mcmc = my.par = rep(list(NA), Nloop)
   
   
   out = lapply(X = 1:Nloop, FUN = function(k){
-    ind = which(par$control == levels(par$control)[k])
+    ind = which(par$control == unique(par$control)[k])
     if(length(ind) == chains){
       # files to be used
       thisfiles = par$file[ind]
