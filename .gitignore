@@ -1,5 +1,12 @@
 #specific folders with too much data or figures
 analysis/data/*
+SSP_DR/data/*
+analysis/R/2017_01_23_Bayes_test/*
+analysis/R/2017_02_07_Bayes_best/*
+analysis/R/2017_03_20_rcpp_Bayes/*
+analysis/R/Jetz_Botero_analysis/*
+analysis/R/posterior/*
+analysis/R/simulations/*
 
 # History files
 .Rhistory
