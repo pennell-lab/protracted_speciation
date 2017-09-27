@@ -1,3 +1,6 @@
+#specific folders with too much data or figures
+analysis/data/*
+
 # History files
 .Rhistory
 .Rapp.history
