@@ -1,4 +1,19 @@
 
+get_SpecExt4birthdeath = function(turnover, divers = NULL){
+  # turnover = d/b
+  # divers = b-d
+  
+  if(is.null(divers)){
+    divers = turnover[2]
+    turnover = turnover[1]
+  }
+  
+  birth = divers / (1 - turnover)
+  death = birth - divers
+  
+  return(structure(c(birth, death), names = c("birth", "death")))
+}
+
 unlist_branches = function(bran){
   out = list()
   ll = length(bran)
@@ -236,7 +251,7 @@ get_matching_cladesHarsh = function(phy, clade.size, tipLabels, minimum = TRUE, 
   # creates a function to evaluate the subclades according to 'mixed' parameter
   if(mixed == 0){
     fun = function(x){
-      bool1 = sum(x == max(x)) == length(x)
+      bool1 = length(unique(x)) == 1
       return(bool1)
     }
   } else{

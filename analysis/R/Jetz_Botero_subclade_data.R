@@ -6,47 +6,47 @@ library(geiger)
 source("analysis/R/auxiliary_functions.R")
 
 
-##### Adds taxonomic info to the Botero dataset
-# loads the dataset from Botero 2014
-load(file = "analysis/data/Botero14.RData")
-# creates a discrete categorization of 'ENV.HARSHNESS'
-birds$harshness = sapply(birds$ENV.HARSHNESS, bin_harshness, bins = 3)
-birds$harshness5 = sapply(birds$ENV.HARSHNESS, bin_harshness, bins = 5)
-#   Creates another classification of "latitudinal distrib" based on the centroid.
-# Basically, eliminates the "Mixed" category and assigns it either to "Tropical" 
-# or "Temperate" depending on where the centroid is located.
-birds$LAT.CENTROID = as.character(ifelse(abs(birds$CENTROID) < 23, "Tropical", "Temperate"))
-
-head(birds)
-ggplot(birds, aes(ENV.HARSHNESS)) + geom_histogram() + facet_grid(LAT.RANGE ~.)
-ggplot(birds, aes(x = abs(CENTROID), y = ENV.HARSHNESS, color = LAT.RANGE)) + geom_point()
-ggplot(birds, aes(SUBSPECIES)) + geom_histogram(aes(y = ..density..)) + facet_grid(harshness ~.)
-# add taxonomy columns to the dataset
-birds$Order = birds$Family = birds$Family.name = birds$Genus = birds$Common.name = NA
-
-# loads list of species per family (each entry a data.frame) from "SSP_DR/R/analysis_Family_level.R"
-load(file = "SSP_DR/data/Reference_species_per_Family.RData")
-# combine all data.frames into a big one
-refBirdLife = do.call(rbind, refBirdLife)
-# corrects the names and transforms all factor columns into characters
-refBirdLife$Order = sapply(as.character(refBirdLife$Order), correct_name)
-refBirdLife$Family.name = as.character(refBirdLife$Family.name)
-refBirdLife$Genus = as.character(refBirdLife$Genus)
-# assigns the species in Botero's dataset to their corresponding taxonomy (according to Birdlife)
-for(i in 1:nrow(refBirdLife)){
-  ind = match(refBirdLife$Scientific.name[i], birds$SPECIES)
-  if(!is.na(ind)){
-    birds[ind, "Common.name"] = refBirdLife$Common.name[i]
-    birds[ind, "Genus"] = refBirdLife$Genus[i]
-    birds[ind, "Family.name"] = refBirdLife$Family.name[i]
-    birds[ind, "Family"] = refBirdLife$Family[i]
-    birds[ind, "Order"] = refBirdLife$Order[i]
-  }
-}
-head(birds)
-str(birds)
-
-write.csv(birds, file = "analysis/data/Botero14_plus_taxonomy.csv", row.names = FALSE)
+# ##### Adds taxonomic info to the Botero dataset
+# # loads the dataset from Botero 2014
+# load(file = "analysis/data/Botero14.RData")
+# # creates a discrete categorization of 'ENV.HARSHNESS'
+# birds$harshness = sapply(birds$ENV.HARSHNESS, bin_harshness, bins = 3)
+# birds$harshness5 = sapply(birds$ENV.HARSHNESS, bin_harshness, bins = 5)
+# #   Creates another classification of "latitudinal distrib" based on the centroid.
+# # Basically, eliminates the "Mixed" category and assigns it either to "Tropical"
+# # or "Temperate" depending on where the centroid is located.
+# birds$LAT.CENTROID = as.character(ifelse(abs(birds$CENTROID) < 23, "Tropical", "Temperate"))
+# 
+# head(birds)
+# ggplot(birds, aes(ENV.HARSHNESS)) + geom_histogram() + facet_grid(LAT.RANGE ~.)
+# ggplot(birds, aes(x = abs(CENTROID), y = ENV.HARSHNESS, color = LAT.RANGE)) + geom_point()
+# ggplot(birds, aes(SUBSPECIES)) + geom_histogram(aes(y = ..density..)) + facet_grid(harshness ~.)
+# # add taxonomy columns to the dataset
+# birds$Order = birds$Family = birds$Family.name = birds$Genus = birds$Common.name = NA
+# 
+# # loads list of species per family (each entry a data.frame) from "SSP_DR/R/analysis_Family_level.R"
+# load(file = "SSP_DR/data/Reference_species_per_Family.RData")
+# # combine all data.frames into a big one
+# refBirdLife = do.call(rbind, refBirdLife)
+# # corrects the names and transforms all factor columns into characters
+# refBirdLife$Order = sapply(as.character(refBirdLife$Order), correct_name)
+# refBirdLife$Family.name = as.character(refBirdLife$Family.name)
+# refBirdLife$Genus = as.character(refBirdLife$Genus)
+# # assigns the species in Botero's dataset to their corresponding taxonomy (according to Birdlife)
+# for(i in 1:nrow(refBirdLife)){
+#   ind = match(refBirdLife$Scientific.name[i], birds$SPECIES)
+#   if(!is.na(ind)){
+#     birds[ind, "Common.name"] = refBirdLife$Common.name[i]
+#     birds[ind, "Genus"] = refBirdLife$Genus[i]
+#     birds[ind, "Family.name"] = refBirdLife$Family.name[i]
+#     birds[ind, "Family"] = refBirdLife$Family[i]
+#     birds[ind, "Order"] = refBirdLife$Order[i]
+#   }
+# }
+# head(birds)
+# str(birds)
+# 
+# write.csv(birds, file = "analysis/data/Botero14_plus_taxonomy.csv", row.names = FALSE)
 
 birds=read.csv(file = "analysis/data/Botero14_plus_taxonomy.csv", as.is = TRUE)
 
@@ -80,8 +80,8 @@ ggsave(genus2ggH, filename = "analysis/output/Botero14_proportion_harshness_genu
 ##### Finds all subclades from the phylogenies that meet certain criteria (#tips, proportion of "Mixed", etc.)
 jetz = read.tree("analysis/data/Jetz_etal/EricsonStage2_0001_1000/AllBirdsEricson1_reduced.tre")
 Ncores = 3
-# gets the tips that do NOT have data (appears in Botero14 dataset) and are NOT in islands
-tips2drop = lapply(jetz, function(x) which( (!x$tip.label %in% birds$SPECIES) & (birds$ISLAND.DWELLING == 0) ))
+# gets the tips that do NOT have data (appears in Botero14 dataset)
+tips2drop = lapply(jetz, function(x) which( (!x$tip.label %in% birds$SPECIES) ))
 # prunes phylogenies accordingly
 clean_jetz = mcmapply(phy = jetz, tip = tips2drop, FUN = drop.tip,
                       SIMPLIFY = FALSE, mc.cores = Ncores)
@@ -163,7 +163,7 @@ branchesHarshClean.unity = lapply(branchesHarshClean, lapply, function(x) x / ma
 
 
 # SAVES
-save(these_subclades, subclades, these_subcladesHarsh, subcladesHarsh,
+save(these_subclades, subclades, these_subcladesHarsh, subcladesHarsh, subcladesHarshClean,
      file = "analysis/data/Jetz_Botero14_30min_0.3mixed_0multilat_subclades.RData")
 save(branches, branches.unity, # temperate
      branchesHarsh, branchesHarsh.unity, # harshness

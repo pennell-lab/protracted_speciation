@@ -67,4 +67,18 @@ iii = 1
 hist(birds$SUBSPECIES[which(birds$LAT.RANGE %in% b1names[[iii]])], breaks = 60, probability = TRUE, col = "black")
 curve(dexp(x, rate = par2plot$rate[iii], log = FALSE), add = TRUE, col = "red", lwd = 1.5)
 curve(dlnorm(x, meanlog = par2plot$meanlog[iii], sdlog = par2plot$sdlog[iii], log = FALSE), add = TRUE, col = "green", lwd = 1.5)
-iii = iii+1
+
+
+#LatHarsh = cor(abs(birds$CENTROID), log(birds$ENV.HARSHNESS - min(birds$ENV.HARSHNESS) + 1) )
+LatHarsh = cor(abs(birds$CENTROID), birds$ENV.HARSHNESS)
+#ggLatHarsh = ggplot(birds, aes(abs(CENTROID), log(ENV.HARSHNESS - min(ENV.HARSHNESS) + 1))) +
+ggLatHarsh = ggplot(birds, aes(abs(CENTROID), ENV.HARSHNESS)) +
+  geom_point() +
+  #geom_text(aes(x = 50, y = -1.5, label = paste0("cor = ", round(LatHarsh, 3))), size = 10) +
+  xlab("abs(Latitude)") + ylab("Harshness") +
+  theme(axis.title.y = element_text(size=30, face="bold"),
+        axis.title.x = element_text(size=30, face="bold"))
+ggLatHarsh
+ggsave(filename = "analysis/output/Botero14_Latitude_Harshness.pdf", plot = ggLatHarsh+geom_text(aes(x = 50, y = -1.5, label = paste0("cor = ", round(LatHarsh, 3))), size = 10) )
+ggsave(filename = "analysis/output/Botero14_Latitude_Harshness.png", plot = ggLatHarsh+geom_text(aes(x = 50, y = -1.5, label = paste0("cor = ", round(LatHarsh, 3))), size = 10) )
+ggsave(filename = "analysis/output/Botero14_Latitude_Harshness_NOcorr.png", plot = ggLatHarsh)

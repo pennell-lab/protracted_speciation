@@ -19,7 +19,7 @@ ouput_data = "output/"
 source(paste0(input_code, "pbd_Bayes3par.R"))
 # source(paste0(input_code, "auxiliary_functions.R")) # it was here for "unlist_branches"
 
-# branches, branches.unity, branchesHarsh, branchesHarsh.unity
+# branches, branches.unity, branchesHarsh, branchesHarsh.unity, branchesHarshClean, branchesHarshClean.unity
 load(file = paste0(input_data, "Jetz_Botero14_30min_0.3mixed_0multilat_branches.RData"))
 # these_branches = unlist_branches(branchesHarsh.unity) # no longer necessary......
 # data.frame with info for harshness
